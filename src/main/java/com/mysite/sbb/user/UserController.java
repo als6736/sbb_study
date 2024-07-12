@@ -3,7 +3,10 @@ package com.mysite.sbb.user;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,7 +51,13 @@ public class UserController {
     }
 
     @GetMapping("/login")
-    public  String login() {
+    public String login() {
         return "login_form";
+    }
+
+    @GetMapping("/mypage")
+    public String mypage() {
+
+        return "mypage";
     }
 }
