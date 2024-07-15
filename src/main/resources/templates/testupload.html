@@ -1,0 +1,21 @@
+<HTML xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<h2>파일 업로드</h2>
+
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+    <h4>단일 파일 업로드</h4>
+    <input type="file" name="file">
+
+    <h4>다중 파일 업로드</h4>
+    <input type="file" multiple="multiple" name="files">
+
+    <input type="submit"/>
+</form>
+</body>
+</html>

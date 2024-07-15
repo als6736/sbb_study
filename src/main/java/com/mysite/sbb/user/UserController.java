@@ -1,10 +1,15 @@
 package com.mysite.sbb.user;
 
+import com.mysite.sbb.DataNotFoundException;
+import com.mysite.sbb.answer.AnswerService;
+import com.mysite.sbb.question.QuestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -12,12 +17,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.security.Principal;
+
 @RequiredArgsConstructor
 @Controller
 @RequestMapping("/user")
 public class UserController {
 
     private final UserService userService;
+
+    private final QuestionService questionService;
+
+    private final AnswerService answerService;
+
+    private  final PasswordEncoder passwordEncoder;
 
     @GetMapping("/signup")
     public String signup(UserCreateForm userCreateForm) {
@@ -56,8 +69,17 @@ public class UserController {
     }
 
     @GetMapping("/mypage")
-    public String mypage() {
+    @PreAuthorize("isAuthenticated()")
+    public String mypage(Model model, Principal principal) {
+        SiteUser user = userService.getUser(principal.getName());
 
+        if (user == null) {
+            throw new DataNotFoundException("사용자를 찾을 수 없습니다.");
+        }
+        model.addAttribute("user", user);
+
+        Long questionCount = questionService.getQuestionCount(user);
+        model.addAttribute("questionCount", questionCount);
         return "mypage";
     }
 }
