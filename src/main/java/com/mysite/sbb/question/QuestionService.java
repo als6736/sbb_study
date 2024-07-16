@@ -2,6 +2,7 @@ package com.mysite.sbb.question;
 
 import com.mysite.sbb.DataNotFoundException;
 import com.mysite.sbb.answer.Answer;
+import com.mysite.sbb.file3.FileService;
 import com.mysite.sbb.user.SiteUser;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.Optional;
 public class QuestionService {
 
     private final QuestionRepository questionRepository;
+    private final FileService fileService;
 
     private Specification<Question> search(String kw) {
         return new Specification<>() {
@@ -68,7 +72,7 @@ public class QuestionService {
         }
     }
 
-    public void create(String subject, String content, SiteUser user) {
+    public void create(String subject, String content, SiteUser user, List<MultipartFile> files) throws IOException {
         Question q = new Question();
         q.setSubject(subject);
         q.setContent(content);
@@ -76,13 +80,27 @@ public class QuestionService {
         q.setAuthor(user);
         q.setView_count(0);
         this.questionRepository.save(q);
+
+        for (MultipartFile file : files) {
+            fileService.saveFile(file, q);
+        }
     }
 
-    public void modify(Question question, String subject,String content) {
+    public void modify(Question question, String subject,String content, List<MultipartFile> newfiles, List<Long> deleteFileIds) throws IOException {
         question.setSubject(subject);
         question.setContent(content);
         question.setModifyDate(LocalDateTime.now());
         this.questionRepository.save(question);
+
+        // 선택적 파일 삭제 로직
+        if (deleteFileIds != null && !deleteFileIds.isEmpty()){
+            fileService.deleteFilesByIds(deleteFileIds);
+        }
+        for (MultipartFile file : newfiles) {
+            if (!file.isEmpty()) {
+                fileService.saveFile(file, question);
+            }
+        }
     }
 
     public Page<Question> getList(int page) {
@@ -98,7 +116,11 @@ public class QuestionService {
     }
 
     public void vote(Question question, SiteUser siteUser) {
-        question.getVoter().add(siteUser);
+        if (question.getVoter().contains(siteUser)){
+            question.getVoter().remove(siteUser);
+        }else {
+            question.getVoter().add(siteUser);
+        }
         this.questionRepository.save(question);
     }
 

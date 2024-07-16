@@ -9,10 +9,19 @@
     <div class="card my-3">
         <div class="card-body">
             <div class="card-text" th:utext="${@commonUtil.markdown(question.content)}"></div>
+            <div th:each="file : ${question.files}">
+                <div th:if="${file.mimeType.startsWith('image/')}">
+                    <img th:src="|/images/${file.id}|" width="150" height="150">
+                    <p th:text="${file.orgNm}"></p>
+                </div>
+            </div>
+            <div th:each="file : ${question.files}">
+                <a th:href="|/attach/${file.id}|" th:text="${file.orgNm}"></a>
+            </div>
             <div class="d-flex justify-content-end">
                 <div th:if="${question.modifyDate != null}" class="badge bg-light text-dark p-2 text-start mx-3">
                     <div class="mb-2">마지막 수정일</div>
-                    <div th:text="${#temporals.format(question.modifyDate, 'yyyy년mm월dd일 HH시mm분')}"></div>
+                    <div th:text="${#temporals.format(question.modifyDate, 'yyyy년MM월dd일 HH시mm분')}"></div>
                 </div>
                 <div class="badge bg-light text-dark p-2 text-start">
                     <div class="mb-2">
@@ -48,7 +57,7 @@
             <div class="d-flex justify-content-end">
                 <div th:if="${answer.modifyDate != null}" class="badge bg-light text-dark p-2 text-start mx-3">
                     <div class="mb-2">마지막 수정일</div>
-                    <div th:text="${#temporals.format(answer.modifyDate, 'yyyy년mm월dd일 HH시mm분')}"></div>
+                    <div th:text="${#temporals.format(answer.modifyDate, 'yyyy년MM월dd일 HH시mm분')}"></div>
                 </div>
                 <div class="badge bg-light text-dark p-2 text-start">
                     <div class="mb-2">
@@ -93,7 +102,7 @@
         });
     });
     const recommend_elements = document.getElementsByClassName("recommend");
-Array.from(recommend_elements).forEach(function(element) {
+    Array.from(recommend_elements).forEach(function(element) {
     element.addEventListener('click', function() {
         if(confirm("정말로 추천하시겠습니까?")) {
             location.href = this.dataset.uri;
@@ -102,6 +111,6 @@ Array.from(recommend_elements).forEach(function(element) {
 });
 
     // 마크다운에디터
-        var simplemde = new SimpleMDE({element: document.getElementById("content")});
+        var simplemde = new SimpleMDE({element: document.getElementById("content"),hideIcons: ["image"]});
 </script>
 </html>

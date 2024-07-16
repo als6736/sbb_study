@@ -84,5 +84,12 @@
         document.getElementById('page').value = 0;  // 검색버튼을 클릭할 경우 0페이지부터 조회한다.
         document.getElementById('searchForm').submit();
     });
+
+    document.querySelectorAll('.secret-content').forEach(element => {
+        element.addEventListener('click', function(event) {
+            alert('이 글은 비밀글입니다.');
+            event.preventDefault();  // 클릭 이벤트 차단
+        });
+    });
 </script>
 </html>

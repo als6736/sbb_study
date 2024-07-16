@@ -31,5 +31,10 @@ public class Answer {
     private LocalDateTime modifyDate;
 
     @ManyToMany
+    @JoinTable(
+            name = "answer_voters", // 관계 테이블 이름 지정
+            joinColumns = @JoinColumn(name = "answer_id"),// 현재 엔티티의 연결 컬럼
+            inverseJoinColumns = @JoinColumn(name = "user_id") // 연결된 엔티티의 컬럼
+    )
     Set<SiteUser> voter;
 }

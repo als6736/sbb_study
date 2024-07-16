@@ -1,5 +1,7 @@
 package com.mysite.sbb.file3;
 
+import com.mysite.sbb.question.Question;
+import com.mysite.sbb.question.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -22,6 +24,7 @@ public class FileController {
 
     private final FileService fileService;
     private final FileRepository fileRepository;
+    private final QuestionService questionService;
 
     @GetMapping("/upload")
     public String fileUploadForm() {
@@ -30,14 +33,22 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public String fileUpload(@RequestParam("file")MultipartFile file, @RequestParam("files") List<MultipartFile> files) throws IOException {
-        fileService.saveFile(file);
+    public String fileUpload(@RequestParam("file")MultipartFile file,
+                             @RequestParam("files") List<MultipartFile> files,
+                             @RequestParam("questionId") Integer questionId) throws IOException {
+        Question question = questionService.getQuestion(questionId);
 
-        for(MultipartFile multipartFile : files) {
-            fileService.saveFile(multipartFile);
+        if (question == null) {
+            return "redirect:/";
         }
 
-        return "redirect:/";
+        fileService.saveFile(file, question);
+
+        for(MultipartFile multipartFile : files) {
+            fileService.saveFile(multipartFile, question);
+        }
+
+        return "redirect:/question/detail/" + questionId;
     }
 
     @GetMapping("/view")

@@ -3,7 +3,7 @@
       layout:decorate="~{layout}">
 <div layout:fragment="content" class="container">
     <h5 class="my-3 border-bottom pb-2">질문등록</h5>
-    <form th:object="${questionForm}" method="post">
+    <form th:object="${questionForm}" method="post" enctype="multipart/form-data" onsubmit="return validateFiles(this);">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         <input type="hidden" name="view_count" value="-1">
         <div th:replace="~{form_errors :: formErrorsFragment}"></div>
@@ -15,17 +15,40 @@
             <label for="content" class="form-label">내용</label>
             <textarea name="content" th:field="*{content}" id="content" class="form-control" rows="10"></textarea>
         </div>
-        <input type="submit" value="저장하기" class="btn btn-primary my-2">
-    </form>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label for="files" class="form-label">파일 업로드</label>
-            <input type="file" id="files" name="files" class="form-control" multiple>
-            <input type="submit" value="파일저장하기" class="btn btn-primary my-2">
+        <!-- 파일 업로드 필드, 수정 시에는 기존 파일을 표시 -->
+        <!-- 기존 파일 수를 저장하는 hidden input 추가 -->
+        <div th:if="${action == 'modify'}">
+            <h4>기존 첨부 파일 중 삭제할 파일을 선택해 주세요</h4>
+            <ul>
+                <th:block th:each="file, stat : ${question.files}">
+                    <li>
+                        <input type="checkbox" th:value="${file.id}" name="deleteFiles[]" />
+                        <span th:text="${file.orgNm}"></span>
+                    </li>
+                </th:block>
+            </ul>
+            <input type="hidden" id="currentFileCount" th:value="${#lists.size(question.files)}" />
         </div>
+        <input type="file" multiple="multiple" name="files" class="form-control">
+        <!-- 등록/수정 버튼 -->
+        <input type="submit" th:value="${action == 'modify' ? '수정하기' : '저장하기'}" class="btn btn-primary">
     </form>
     <script>
-        var simplemde = new SimpleMDE({ element: document.getElementById("content") });
+        var simplemde = new SimpleMDE({element: document.getElementById("content"),hideIcons: ["image"]});
+        function validateFiles(form) {
+        var maxCount = 3;
+        var filesInput = form.querySelector('input[type="file"]');
+        var deleteCheckboxes = form.querySelectorAll('input[name="deleteFiles[]"]:checked').length;
+        var currentFilesCount = form.querySelector('#currentFileCount') ? parseInt(form.querySelector('#currentFileCount').value) - deleteCheckboxes : 0;
+        var totalFiles = currentFilesCount + filesInput.files.length;
+
+        if (totalFiles > maxCount) {
+            alert("전체 파일은 최대 3개까지 업로드 가능합니다.\n현재 선택된 파일 수 포함 총: " + totalFiles);
+            filesInput.value = "";  // 선택된 파일을 리셋
+            return false;
+        }
+        return true;
+    }
     </script>
 </div>
 </html>
