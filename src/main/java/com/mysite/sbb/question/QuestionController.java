@@ -43,10 +43,17 @@ public class QuestionController {
     }
 
     @GetMapping(value = "/detail/{id}")
-    public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm) {
+    public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm, Principal principal) {
         Question question = this.questionService.getQuestion(id);
         question.incrementViewCount();
+        boolean hasVoted = false;
+        if (principal != null) {
+            SiteUser currentUser = userService.getUser(principal.getName());
+            hasVoted = question.getVoter().contains(currentUser);
+        }
         model.addAttribute("question",question);
+        model.addAttribute("hasVoted", hasVoted);
+        model.addAttribute("isAuthenticated", principal != null);
         return "question_detail";
     }
 

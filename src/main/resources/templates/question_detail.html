@@ -32,9 +32,17 @@
             </div>
             <div class="my-3">
                 <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
-                   th:data-uri="@{|/question/vote/${question.id}|}">
-                    추천
+                   th:if="${isAuthenticated}"
+                   th:data-uri="@{|/question/vote/${question.id}|}"
+                   th:data-voted="${hasVoted}"
+                   th:title="${hasVoted ? '추천 취소' : '추천'}">
+                    <span th:text="${hasVoted ? '추천 취소' : '추천'}">Recommend</span>
                     <span class="badge rounded-pill bg-success" th:text="${#lists.size(question.voter)}"></span>
+                </a>
+                <a href="#"  class="recommend btn btn-sm btn-outline-secondary"
+                   th:unless="${isAuthenticated}"
+                   th:data-uri="@{|/question/vote/${question.id}|}">추천
+                    <span th:unless="${isAuthenticated}" class="badge rounded-pill bg-success" th:text="${#lists.size(question.voter)}"></span>
                 </a>
                 <a th:href="@{|/question/modify/${question.id}|}" class="btn btn-sm btn-outline-secondary"
                    sec:authorize="isAuthenticated()"
@@ -103,12 +111,14 @@
     });
     const recommend_elements = document.getElementsByClassName("recommend");
     Array.from(recommend_elements).forEach(function(element) {
-    element.addEventListener('click', function() {
-        if(confirm("정말로 추천하시겠습니까?")) {
-            location.href = this.dataset.uri;
-        };
+        element.addEventListener('click', function() {
+            const hasVoted = this.dataset.voted === 'true';
+            const message = hasVoted ? "정말로 추천을 취소하시겠습니까?" : "정말로 추천하시겠습니까?";
+            if(confirm(message)) {
+                location.href = this.dataset.uri;
+            }
+        });
     });
-});
 
     // 마크다운에디터
         var simplemde = new SimpleMDE({element: document.getElementById("content"),hideIcons: ["image"]});
