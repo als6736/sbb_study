@@ -1,0 +1,2105 @@
+//1. DTO -> 엔티티 변환하기
+        Article article = dto.toEntity();
+        log.info("id : {}, article: {}", id, article.toString());
+        //2. DB에 대상 엔티티가 있는지 조회하기
+        Article target = articleRepository.findById(id).orElse(null);
+        //3. 대상 엔티티가 없거나 수정하려는 id가 잘못됐을 경우 처리하기
+        if (target == null || id != article.getId()) {
+            //400 잘못된 요청 응답!
+            log.info("잘못된 요청! id: {}, article: {}", id, article.toString());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        //4. 업데이트 및 정상 응답 하기
+        target.patch(article);
+        Article updated = articleRepository.save(target);
+        return ResponseEntity.status(HttpStatus.OK).body(updated);
+
+
+//1. 대상 찾기
+        Article target = articleRepository.findById(id).orElse(null);
+        //2. 잘못된 요청 처리하기
+        if (target == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        //3. 대상 삭제하기
+        articleRepository.delete(target);
+        return ResponseEntity.status(HttpStatus.OK).body(null);
+
+data-bs-id="{{id}}"
+                        data-bs-nickname="{{nickname}}"
+                        data-bs-body="{{body}}"
+                        data-bs-article-id="{{articleId}}">
+
+
+{{>layouts/header}}
+
+<form class="container" action="/members/signup" method="post">
+        {{#errors}}
+        <div class="alert alert-danger">
+            {{.}}
+        </div>
+        {{/errors}}
+    <div class="mb-3">
+        <label for="username" class="form-label">아이디</label>
+        <input type="text" name="username" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label for="password1" class="form-label">비밀번호</label>
+        <input type="password" name="password1" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label for="password2" class="form-label">비밀번호 확인</label>
+        <input type="password" name="password2" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">이메일</label>
+        <input type="email" name="email" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-primary">회원가입</button>
+    <a href="/articles">Back</a>
+</form>
+
+{{>layouts/footer}}
+
+public Page<Question> getList(int page) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
+        return this.questionRepository.findAll(pageable);
+    }
+서비스 관련 페이지 코드
+
+ @GetMapping("/list")
+    public String list(Model model, @RequestParam(value = "page", defaultValue = "1") int page) {
+        Page<Question> paging = this.questionService.getList(page);
+        model.addAttribute("paging", paging);
+        return "question_list";
+    }
+컨트롤 관련 코드
+
+public interface QuestionRepository extends JpaRepository<Question, Integer> {
+Page<Question> findAll(Pageable pageable);
+}
+리포지토리 관련 코드
+
+<div th:if="${!paging.isEmpty()}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${!paging.hasPrevious} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{|?page=${paging.number-1}|}">
+                    <span>이전</span>
+                </a>
+            </li>
+            <li th:each="page: ${#numbers.sequence(0, paging.totalPages-1)}"
+                th:if="${page >= paging.number-3 and page <= paging.number+3}"
+                th:classappend="${page == paging.number} ? 'active'"
+                class="page-item">
+                <a th:text="${page}" class="page-link" th:href="@{|?page=${page}|}"></a>
+            </li>
+            <li class="page-item" th:classappend="${!paging.hasNext} ? 'disabled'">
+                <a class="page-link" th:href="@{|?page=${paging.number+1}|}">
+                    <span>다음</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+페이징 관련 html코드
+
+
+<li th:each="page: ${#numbers.sequence(1, paging.totalPages)}"
+                th:if="${page >= paging.number+1-3 and page <= paging.number+1+3}"
+                th:classappend="${page == paging.number+1} ? 'active'"
+                class="page-item">
+                <a th:text="${page}" class="page-link" th:href="@{|?page=${page}|}"></a>
+            </li>
+
+@Getter
+@Setter
+@Entity
+public class Question {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(length = 200)
+    private String subject;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private LocalDateTime createDate;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE)
+    private List<Answer> answerList;
+
+    @ManyToOne
+    private SiteUser author;
+
+    private LocalDateTime modifyDate;
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private Integer view_count;
+
+
+    public void incrementViewCount() {
+        this.view_count +=1;
+    }
+}
+Question Entity이다
+
+@RequestMapping("/question")
+@RequiredArgsConstructor
+@Controller
+public class QuestionController {
+
+    private final QuestionService questionService;
+    private final UserService userService;
+
+    @GetMapping("/list")
+    public String list(Model model, @RequestParam(value = "page", defaultValue = "1") int page) {
+        Page<Question> paging = this.questionService.getList(page);
+        model.addAttribute("paging", paging);
+        return "question_list";
+    }
+
+    @GetMapping(value = "/detail/{id}")
+    public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm) {
+        Question question = this.questionService.getQuestion(id);
+        model.addAttribute("question",question);
+        return "question_detail";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/create")
+    public String questionCreate(QuestionForm questionForm) {
+        return "question_form";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/create")
+    public String questionCreate(@Valid QuestionForm questionForm,
+                                 BindingResult bindingResult, Principal principal) {
+        if (bindingResult.hasErrors()) {
+            return "question_form";
+        }
+        SiteUser siteUser = this.userService.getUser(principal.getName());
+        this.questionService.create(questionForm.getSubject(), questionForm.getContent(), siteUser);
+        return "redirect:/question/list"; // 질문 등록후 저장목록으로 이동
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/modify/{id}")
+    public String questionModify(QuestionForm questionForm, @PathVariable("id") Integer id, Principal principal) {
+        Question question = this.questionService.getQuestion(id);
+        if(!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"수정권한이 없습니다.");
+        }
+        questionForm.setSubject(question.getSubject());
+        questionForm.setContent(question.getContent());
+        return "question_form";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/modify/{id}")
+    public String questionModify(@Valid QuestionForm questionForm, BindingResult bindingResult, Principal principal, @PathVariable("id") Integer id) {
+        if (bindingResult.hasErrors()) {
+            return "question_form";
+        }
+        Question question = this.questionService.getQuestion(id);
+        if (!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정권한이 없습니다.");
+        }
+        this.questionService.modify(question, questionForm.getSubject(), questionForm.getContent());
+        return String.format("redirect:/question/detail/%s", id);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/delete/{id}")
+    public String questionDelete(Principal principal, @PathVariable("id") Integer id) {
+        Question question = this.questionService.getQuestion(id);
+        if (!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "삭제권한이 없습니다.");
+        }
+        this.questionService.delete(question);
+        return "redirect:/";
+    }
+
+}
+QuestionController 이다
+
+@Getter
+@Setter
+public class QuestionForm {
+    @NotEmpty(message = "제목은 필수항목입니다.")
+    @Size(max = 200)
+    private String subject;
+
+    @NotEmpty(message = "내용은 필수항목입니다.")
+    private String content;
+}
+QuestionForm 이다
+
+public interface QuestionRepository extends JpaRepository<Question, Integer> {
+    Question findBySubject(String subject);
+    Question findBySubjectAndContent(String subject, String Content);
+    List<Question> findBySubjectLike(String subject);
+    Page<Question> findAll(Pageable pageable);
+}
+QuestionRepository이다
+
+@RequiredArgsConstructor
+@Service
+public class QuestionService {
+
+    private final QuestionRepository questionRepository;
+
+    public List<Question> getList() {
+        return this.questionRepository.findAll();
+    }
+
+    public Question getQuestion(Integer id) {
+        Optional<Question> question1 = this.questionRepository.findById(id);
+        if (question1.isPresent()) {
+            Question question = question1.get();
+
+            //조회수 증가 로직
+            question.incrementViewCount(); // Question 클래스의 조회수 증가 메서드 호출
+            this.questionRepository.save(question); // 변경된 객체 저장
+
+            return question;
+        } else {
+            throw new DataNotFoundException("question not found");
+        }
+    }
+
+    public void create(String subject, String content, SiteUser user) {
+        Question q = new Question();
+        q.setSubject(subject);
+        q.setContent(content);
+        q.setCreateDate(LocalDateTime.now());
+        q.setAuthor(user);
+        this.questionRepository.save(q);
+    }
+
+    public void modify(Question question, String subject,String content) {
+        question.setSubject(subject);
+        question.setContent(content);
+        question.setModifyDate(LocalDateTime.now());
+        this.questionRepository.save(question);
+    }
+
+    public Page<Question> getList(int page) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        // page - 1을 사용하여 사용자의 입력(1부터 시작)을 Pageable의 0부터 시작하는 인덱스에 맞춥니다.
+        Pageable pageable = PageRequest.of(page - 1, 10, Sort.by(sorts));
+        return this.questionRepository.findAll(pageable);
+    }
+
+    public void delete(Question question) {
+        this.questionRepository.delete(question);
+    }
+}
+QuestionService이다
+
+<!-- 페이징처리 시작 -->
+    <div th:if="${!paging.isEmpty()}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${!paging.hasPrevious} ? 'disabled'">
+                <a class="page-link"
+                   th:href="@{|?page=${paging.number}|}">
+                    <span>이전</span>
+                </a>
+            </li>
+            <li th:each="page: ${#numbers.sequence(
+            (paging.number+1) <= 4 ? 1 : ((paging.number+1) > (paging.totalPages - 3) ? paging.totalPages - 6 : (paging.number+1) - 3),
+            (paging.number+1) <= 4 ? 7 : ((paging.number+1) + 3 > paging.totalPages ? paging.totalPages : (paging.number+1) + 3))}"
+                th:classappend="${page == paging.number+1} ? 'active'"
+                class="page-item">
+                <a th:text="${page}" class="page-link" th:href="@{|?page=${page}|}"></a>
+            </li>
+            <li class="page-item" th:classappend="${!paging.hasNext} ? 'disabled'">
+                <a class="page-link" th:href="@{|?page=${paging.number+2}|}">
+                    <span>다음</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <!-- 페이징처리 끝 -->
+
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<div layout:fragment="content" class="container my-3">
+    <div class="row my-3">
+        <div class="col-6">
+            <a th:href="@{/question/create}" class="btn btn-primary">질문 등록하기</a>
+        </div>
+    <div class="col-6">
+        <div class="input-group">
+            <input type="text" id="search_kw" class="form-control" th:value="${kw}">
+            <button class="btn btn-outline-secondary" type="button" id="btn_search">찾기</button>
+        </div>
+    </div>
+    </div>
+<table class="table">
+    <thead class="table-dark">
+    <tr class="text-center">
+        <th>번호</th>
+        <th style="width:50%">제목</th>
+        <th>아이디</th>
+        <th>조회수</th>
+        <th>추천수</th>
+        <th>작성일시</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr class="text-center" th:each="question, loop : ${paging}">
+        <td th:text="${paging.getTotalElements - (paging.number * paging.size) - loop.index}"></td>
+        <td class="text-start">
+            <a th:href="@{|/question/detail/${question.id}|}" th:text="${question.subject}"></a>
+            <span class="text-danger small ms-2"
+                  th:if="${#lists.size(question.answerList) > 0}"
+                  th:text="${#lists.size(question.answerList)}">
+                    </span>
+        </td>
+        <td><span th:if="${question.author != null}" th:text="${question.author.username}"></span></td>
+        <td th:text="${question.view_count}"></td>
+        <td th:text="${#lists.size(question.voter)}"></td>
+        <td th:text="${#temporals.format(question.createDate, 'yyyy년MM월dd일 HH시mm분')}"></td>
+    </tr>
+    </tbody>
+</table>
+    <!-- 페이징처리 시작 -->
+    <div th:if="${!paging.isEmpty()}">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${!paging.hasPrevious} ? 'disabled'">
+                <a class="page-link" href="javascript:void(0)" th:data-page="${paging.number-1}">
+                    <span>이전</span>
+                </a>
+            </li>
+            <li th:each="page: ${#numbers.sequence(
+            (paging.number+1) <= 4 ? 1 : ((paging.number+1) > (paging.totalPages - 3) ? paging.totalPages - 6 : (paging.number+1) - 3),
+            (paging.number+1) <= 4 ? 7 : ((paging.number+1) + 3 > paging.totalPages ? paging.totalPages : (paging.number+1) + 3))}"
+                th:classappend="${page == paging.number+1} ? 'active'"
+                class="page-item">
+                <a th:text="${page}" class="page-link" href="javascript:void(0)" th:data-page="${page-1}"></a>
+            </li>
+            <li class="page-item" th:classappend="${!paging.hasNext} ? 'disabled'">
+                <a class="page-link" href="javascript:void(0)" th:data-page="${paging.number+1}">
+                    <span>다음</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    <!-- 페이징처리 끝 -->
+    <form th:action="@{/question/list}" method="get" id="searchForm">
+        <input type="hidden" id="kw" name="kw" th:value="${kw}">
+        <input type="hidden" id="page" name="page" th:value="${paging.number}">
+    </form>
+</div>
+<script layout:fragment="script" type='text/javascript'>
+    const page_elements = document.getElementsByClassName("page-link");
+    Array.from(page_elements).forEach(function(element) {
+        element.addEventListener('click', function() {
+            document.getElementById('page').value = this.dataset.page;
+            document.getElementById('searchForm').submit();
+        });
+    });
+    const btn_search = document.getElementById("btn_search");
+    btn_search.addEventListener('click', function() {
+        document.getElementById('kw').value = document.getElementById('search_kw').value;
+        document.getElementById('page').value = 0;  // 검색버튼을 클릭할 경우 0페이지부터 조회한다.
+        document.getElementById('searchForm').submit();
+    });
+</script>
+</html>
+이건 html이야
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.answer.Answer;
+import com.mysite.sbb.user.SiteUser;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+
+@Getter
+@Setter
+@Entity
+public class Question {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(length = 200)
+    private String subject;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private LocalDateTime createDate;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE)
+    private List<Answer> answerList;
+
+    @ManyToOne
+    private SiteUser author;
+
+    private LocalDateTime modifyDate;
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private Integer view_count = 0;
+
+    @ManyToMany
+    Set<SiteUser> voter;
+
+    public void incrementViewCount() {
+        this.view_count +=1;
+    }
+}
+이건 Entity야
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.answer.AnswerForm;
+import com.mysite.sbb.user.SiteUser;
+import com.mysite.sbb.user.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.security.Principal;
+import java.util.List;
+
+@RequestMapping("/question")
+@RequiredArgsConstructor
+@Controller
+public class QuestionController {
+
+    private final QuestionService questionService;
+    private final UserService userService;
+
+    @GetMapping("/list")
+    public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page,
+                       @RequestParam(value = "kw", defaultValue = "") String kw) {
+        Page<Question> paging = this.questionService.getList(page, kw);
+        model.addAttribute("paging", paging);
+        model.addAttribute("kw", kw);
+        return "question_list";
+    }
+
+    @GetMapping(value = "/detail/{id}")
+    public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm) {
+        Question question = this.questionService.getQuestion(id);
+        question.incrementViewCount();
+        model.addAttribute("question",question);
+        return "question_detail";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/create")
+    public String questionCreate(QuestionForm questionForm) {
+        return "question_form";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/create")
+    public String questionCreate(@Valid QuestionForm questionForm,
+                                 BindingResult bindingResult, Principal principal) {
+        if (bindingResult.hasErrors()) {
+            return "question_form";
+        }
+        SiteUser siteUser = this.userService.getUser(principal.getName());
+        this.questionService.create(questionForm.getSubject(), questionForm.getContent(), siteUser);
+        return "redirect:/question/list"; // 질문 등록후 저장목록으로 이동
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/modify/{id}")
+    public String questionModify(QuestionForm questionForm, @PathVariable("id") Integer id, Principal principal) {
+        Question question = this.questionService.getQuestion(id);
+        if(!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"수정권한이 없습니다.");
+        }
+        questionForm.setSubject(question.getSubject());
+        questionForm.setContent(question.getContent());
+        return "question_form";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/modify/{id}")
+    public String questionModify(@Valid QuestionForm questionForm, BindingResult bindingResult, Principal principal, @PathVariable("id") Integer id) {
+        if (bindingResult.hasErrors()) {
+            return "question_form";
+        }
+        Question question = this.questionService.getQuestion(id);
+        if (!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정권한이 없습니다.");
+        }
+        this.questionService.modify(question, questionForm.getSubject(), questionForm.getContent());
+        return String.format("redirect:/question/detail/%s", id);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/delete/{id}")
+    public String questionDelete(Principal principal, @PathVariable("id") Integer id) {
+        Question question = this.questionService.getQuestion(id);
+        if (!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "삭제권한이 없습니다.");
+        }
+        this.questionService.delete(question);
+        return "redirect:/";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/vote/{id}")
+    public String questionVote(Principal principal, @PathVariable("id") Integer id) {
+        Question question = this.questionService.getQuestion(id);
+        SiteUser siteUser = this.userService.getUser(principal.getName());
+        this.questionService.vote(question, siteUser);
+        return String.format("redirect:/question/detail/%s", id);
+    }
+
+}
+이건 Controller야
+
+package com.mysite.sbb.question;
+
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class QuestionForm {
+    @NotEmpty(message = "제목은 필수항목입니다.")
+    @Size(max = 200)
+    private String subject;
+
+    @NotEmpty(message = "내용은 필수항목입니다.")
+    private String content;
+}
+이건 Form이야
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.user.SiteUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface QuestionRepository extends JpaRepository<Question, Integer> {
+    Question findBySubject(String subject);
+    Question findBySubjectAndContent(String subject, String Content);
+    List<Question> findBySubjectLike(String subject);
+    Page<Question> findAll(Pageable pageable);
+    Page<Question> findAll(Specification<Question> spec, Pageable pageable);
+    Long countByAuthor(SiteUser author);
+}
+이건 Repository야
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.DataNotFoundException;
+import com.mysite.sbb.answer.Answer;
+import com.mysite.sbb.user.SiteUser;
+import jakarta.persistence.criteria.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@RequiredArgsConstructor
+@Service
+public class QuestionService {
+
+    private final QuestionRepository questionRepository;
+
+    private Specification<Question> search(String kw) {
+        return new Specification<>() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public Predicate toPredicate(Root<Question> q, CriteriaQuery<?> query, CriteriaBuilder cb) {
+                query.distinct(true); //중복을 제거
+                Join<Question, SiteUser> u1 = q.join("author", JoinType.LEFT);
+                Join<Question, Answer> a = q.join("answerList", JoinType.LEFT);
+                Join<Answer, SiteUser> u2 = a.join("author", JoinType.LEFT);
+                return cb.or(cb.like(q.get("subject"), "%" + kw + "%"), //제목
+                        cb.like(q.get("content"),"%" + kw + "%"), //내용
+                        cb.like(u1.get("username"),"%" + kw + "%"), // 질문 작성자
+                        cb.like(a.get("content"),"%" + kw + "%"), // 답변 내용
+                        cb.like(u2.get("username"),"%" + kw + "%")); // 답변 작성자
+            }
+        };
+    }
+
+    public Page<Question> getList(int page, String kw) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
+        Specification<Question> spec = search(kw);
+        return this.questionRepository.findAll(spec, pageable);
+    }
+
+    public List<Question> getList() {
+        return this.questionRepository.findAll();
+    }
+
+    public Question getQuestion(Integer id) {
+        Optional<Question> question1 = this.questionRepository.findById(id);
+        if (question1.isPresent()) {
+            Question question = question1.get();
+
+            //조회수 증가 로직
+            question.incrementViewCount(); // Question 클래스의 조회수 증가 메서드 호출
+            this.questionRepository.save(question); // 변경된 객체 저장
+
+            return question;
+        } else {
+            throw new DataNotFoundException("question not found");
+        }
+    }
+
+    public void create(String subject, String content, SiteUser user) {
+        Question q = new Question();
+        q.setSubject(subject);
+        q.setContent(content);
+        q.setCreateDate(LocalDateTime.now());
+        q.setAuthor(user);
+        q.setView_count(0);
+        this.questionRepository.save(q);
+    }
+
+    public void modify(Question question, String subject,String content) {
+        question.setSubject(subject);
+        question.setContent(content);
+        question.setModifyDate(LocalDateTime.now());
+        this.questionRepository.save(question);
+    }
+
+    public Page<Question> getList(int page) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        // page - 1을 사용하여 사용자의 입력(1부터 시작)을 Pageable의 0부터 시작하는 인덱스에 맞춥니다.
+        Pageable pageable = PageRequest.of(page - 1, 10, Sort.by(sorts));
+        return this.questionRepository.findAll(pageable);
+    }
+
+    public void delete(Question question) {
+        this.questionRepository.delete(question);
+    }
+
+    public void vote(Question question, SiteUser siteUser) {
+        question.getVoter().add(siteUser);
+        this.questionRepository.save(question);
+    }
+
+    public Long getQuestionCount(SiteUser author) {
+        return questionRepository.countByAuthor(author);
+    }
+}
+이건 Service야
+
+
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<div layout:fragment="content" class="container">
+    <h5 class="my-3 border-bottom pb-2">질문등록</h5>
+    <form th:object="${questionForm}" method="post">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <input type="hidden" name="view_count" value="-1">
+        <div th:replace="~{form_errors :: formErrorsFragment}"></div>
+        <div class="mb-3">
+            <label for="subject" class="form-label">제목</label>
+            <input type="text" th:field="*{subject}" name="subject" id="subject" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="content" class="form-label">내용</label>
+            <textarea name="content" th:field="*{content}" id="content" class="form-control" rows="10"></textarea>
+        </div>
+        <input type="submit" value="저장하기" class="btn btn-primary my-2">
+    </form>
+    <script>
+        var simplemde = new SimpleMDE({ element: document.getElementById("content") });
+    </script>
+</div>
+</html>
+이건 게시글 등록html이야
+
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<div layout:fragment="content" class="container my-3">
+    <!-- 질문 -->
+    <h2 class="border-bottom py-2" th:text="${question.subject}"></h2>
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-text" th:utext="${@commonUtil.markdown(question.content)}"></div>
+            <div class="d-flex justify-content-end">
+                <div th:if="${question.modifyDate != null}" class="badge bg-light text-dark p-2 text-start mx-3">
+                    <div class="mb-2">마지막 수정일</div>
+                    <div th:text="${#temporals.format(question.modifyDate, 'yyyy년mm월dd일 HH시mm분')}"></div>
+                </div>
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <div class="mb-2">
+                        <span th:if="${question.author != null}" th:text="${question.author.username}"></span>
+                    </div>
+                    <div th:text="${#temporals.format(question.createDate, 'yyyy년MM월dd일 HH시mm분')}"></div>
+                </div>
+            </div>
+            <div class="my-3">
+                <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
+                   th:data-uri="@{|/question/vote/${question.id}|}">
+                    추천
+                    <span class="badge rounded-pill bg-success" th:text="${#lists.size(question.voter)}"></span>
+                </a>
+                <a th:href="@{|/question/modify/${question.id}|}" class="btn btn-sm btn-outline-secondary"
+                   sec:authorize="isAuthenticated()"
+                   th:if="${question.author != null and #authentication.getPrincipal().getUsername() == question.author.username}"
+                   th:text="수정"></a>
+                <a href="javascript:void(0);" th:data-uri="@{|/question/delete/${question.id}|}"
+                   class="delete btn btn-sm btn-outline-secondary" sec:authorize="isAuthenticated"
+                   th:if="${question.author != null and #authentication.getPrincipal().getUsername() == question.author.username}"
+                   th:text="삭제"></a>
+            </div>
+        </div>
+    </div>
+    <!-- 답변의 갯수 표시 -->
+    <h5 class="border-bottom my-3 py-2"
+        th:text="|${#lists.size(question.answerList)}개의 댓글이 있습니다.|"></h5>
+    <!-- 답변 반복 시작 -->
+    <div class="card my-3" th:each="answer : ${question.answerList}">
+        <div class="card-body">
+            <div class="card-text" th:utext="${@commonUtil.markdown(answer.content)}"></div>
+            <div class="d-flex justify-content-end">
+                <div th:if="${answer.modifyDate != null}" class="badge bg-light text-dark p-2 text-start mx-3">
+                    <div class="mb-2">마지막 수정일</div>
+                    <div th:text="${#temporals.format(answer.modifyDate, 'yyyy년mm월dd일 HH시mm분')}"></div>
+                </div>
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <div class="mb-2">
+                        <span th:if="${answer.author != null}" th:text="${answer.author.username}"></span>
+                    </div>
+                    <div th:text="${#temporals.format(answer.createDate, 'yyyy년MM월dd일 HH시mm분')}"></div>
+                </div>
+            </div>
+            <div class="my-3">
+                <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
+                   th:data-uri="@{|/answer/vote/${answer.id}|}">
+                    추천
+                    <span class="badge rounded-pill bg-success" th:text="${#lists.size(answer.voter)}"></span>
+                </a>
+                <a th:href="@{|/answer/modify/${answer.id}|}" class="btn btn-sm btn-outline-secondary"
+                   sec:authorize="isAuthenticated()"
+                   th:if="${answer.author != null and #authentication.getPrincipal().getUsername() == answer.author.username}"
+                   th:text="수정"></a>
+                <a href="javascript:void(0);" th:data-uri="@{|/answer/delete/${answer.id}}"
+                   class="delete btn btn-sm btn-outline-secondary" sec:authorize="isAuthenticated"
+                   th:if="${answer.author != null and #authentication.getPrincipal().getUsername() == answer.author.username}"
+                   th:text="삭제"></a>
+            </div>
+        </div>
+    </div>
+    <!-- 답변 반복 끝  -->
+    <!-- 답변 작성 -->
+    <form th:action="@{|/answer/create/${question.id}|}" th:object="${answerForm}" method="post" class="my-3">
+        <div th:replace="~{form_errors :: formErrorsFragment}"></div>
+        <textarea sec:authorize="isAnonymous()" disabled th:field="*{content}" class="form-control" rows="10"></textarea>
+        <textarea sec:authorize="isAuthenticated()" th:field="*{content}" class="form-control" rows="10"></textarea>
+        <input type="submit" value="댓글등록" class="btn btn-primary my-2">
+    </form>
+</div>
+<script layout:fragment="script" type='text/javascript'>
+    const delete_elements = document.getElementsByClassName("delete");
+    Array.from(delete_elements).forEach(function(element) {
+        element.addEventListener('click', function() {
+            if(confirm("정말로 삭제하시겠습니까?")) {
+                location.href = this.dataset.uri;
+            };
+        });
+    });
+    const recommend_elements = document.getElementsByClassName("recommend");
+Array.from(recommend_elements).forEach(function(element) {
+    element.addEventListener('click', function() {
+        if(confirm("정말로 추천하시겠습니까?")) {
+            location.href = this.dataset.uri;
+        };
+    });
+});
+
+    // 마크다운에디터
+        var simplemde = new SimpleMDE({element: document.getElementById("content")});
+</script>
+</html>
+이건 게시글 상세 페이지야
+
+파일 업로드 기능을 만들고 싶어 파일의 갯수는 3개 제한하고 그 이상일 경우 '파일을 3개이상 업로드할 수 없습니다'메시지를 출력하고
+저장할때 중복 문제를 해결하기 위해서 UUID를 사용하고 싶어 또한 상세페이지에서 업로드한 파일을 확인할 수 있게 해줘
+
+
+
+
+
+
+
+
+
+@Service
+public class FileStorageService {
+    private final Path fileStorageLocation;
+
+    @Autowired
+    public FileStorageService(FileStorageProperties fileStorageProperties) {
+        this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDir())
+                .toAbsolutePath().normalize();
+
+        try {
+            Files.createDirectories(this.fileStorageLocation);
+        } catch (Exception ex) {
+            throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", ex);
+        }
+    }
+
+    public String storeFile(MultipartFile file) {
+        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String fileExtension = StringUtils.getFilenameExtension(fileName);
+        String savedFileName = UUID.randomUUID().toString() + "." + fileExtension;
+
+        try {
+            Path targetLocation = this.fileStorageLocation.resolve(savedFileName);
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            return savedFileName;
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
+        }
+    }
+}
+
+
+
+
+
+@PreAuthorize("isAuthenticated()")
+@PostMapping("/create")
+public String questionCreate(@Valid QuestionForm questionForm, BindingResult bindingResult,
+                             @RequestParam("files") MultipartFile[] files, Principal principal, Model model) {
+    if (bindingResult.hasErrors()) {
+        return "question_form";
+    }
+
+    if (files.length > 3) {
+        model.addAttribute("error", "파일을 3개 이상 업로드할 수 없습니다.");
+        return "question_form";
+    }
+
+    SiteUser siteUser = this.userService.getUser(principal.getName());
+    Question question = this.questionService.create(questionForm.getSubject(), questionForm.getContent(), siteUser);
+
+    try {
+        for (MultipartFile file : files) {
+            if (file.isEmpty()) continue;  // 빈 파일은 건너뜀
+            String fileName = fileStorageService.storeFile(file);  // 파일 저장 및 저장된 파일 이름 반환
+            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                                    .path("/downloadFile/")
+                                    .path(fileName)
+                                    .toUriString();
+            
+            File dbFile = new File(fileName, fileDownloadUri, file.getContentType(), file.getSize());
+            fileRepository.save(dbFile);  // DB에 파일 정보 저장
+            question.addFile(dbFile);  // Question 객체에 파일 정보 추가
+        }
+        this.questionRepository.save(question);  // Question 객체를 DB에 저장
+    } catch (Exception e) {
+        model.addAttribute("error", "파일 업로드 중 오류가 발생했습니다: " + e.getMessage());
+        return "question_form";
+    }
+
+    return "redirect:/question/list";  // 질문 등록 후 목록으로 이동
+}
+
+package com.mysite.sbb.question;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
+
+@Service
+public class FileService {
+
+    private final Path rootLocation = Paths.get("uploads");
+
+    @Autowired
+    private AttachmentRepository attachmentRepository;
+
+    public Attachment store(MultipartFile file, Question question) throws Exception {
+        String extension = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf("."));
+        String storedFileName = UUID.randomUUID().toString() + extension;
+        Files.copy(file.getInputStream(), this.rootLocation.resolve(storedFileName));
+        Attachment attachment = new Attachment(file.getOriginalFilename(), storedFileName, file.getSize(), LocalDateTime.now(), question);
+        return attachmentRepository.save(attachment);
+    }
+}
+
+// Add new imports
+import org.springframework.web.multipart.MultipartFile;
+
+// Add to existing controller methods
+@PostMapping("/create")
+public String questionCreate(@Valid QuestionForm questionForm, BindingResult bindingResult, Principal principal, @RequestParam("files") MultipartFile[] files) {
+    if (bindingResult.hasErrors()) {
+        return "question_form";
+    }
+    SiteUser siteUser = userService.getUser(principal.getName());
+    Question question = questionService.create(questionForm.getSubject(), questionForm.getContent(), siteUser);
+
+    if (files != null && files.length > 0) {
+        for (MultipartFile file : files) {
+            if (!file.isEmpty() && question.getAttachments().size() < 3) {
+                Attachment attachment = fileService.store(file, question);
+                question.addAttachment(attachment);
+            }
+        }
+    }
+
+    return "redirect:/question/list";
+}
+
+
+
+
+
+
+package com.mysite.sbb.file3;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriUtils;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+@RequiredArgsConstructor
+@Controller
+public class FileController {
+
+    private final FileService fileService;
+    private final FileRepository fileRepository;
+
+    @GetMapping("/upload")
+    public String fileUploadForm() {
+
+        return "testupload";
+    }
+
+    @PostMapping("/upload")
+    public String fileUpload(@RequestParam("file")MultipartFile file, @RequestParam("files") List<MultipartFile> files) throws IOException {
+        fileService.saveFile(file);
+
+        for(MultipartFile multipartFile : files) {
+            fileService.saveFile(multipartFile);
+        }
+
+        return "redirect:/";
+    }
+
+    @GetMapping("/view")
+    public String view(Model model) {
+
+        List<FileEntity> files = fileRepository.findAll();
+        model.addAttribute("all",files);
+        return "testview";
+    }
+
+
+    //   이미지 출력
+    @GetMapping("/images/{fileId}")
+    @ResponseBody
+    public Resource downloadImage(@PathVariable("fileId") Long id, Model model) throws IOException{
+
+        FileEntity file = fileRepository.findById(id).orElse(null);
+        return new UrlResource("file:" + file.getSavedPath());
+    }
+
+    // 첨부 파일 다운로드
+    @GetMapping("/attach/{id}")
+    public ResponseEntity<Resource> downloadAttach(@PathVariable Long id) throws MalformedURLException {
+
+        FileEntity file = fileRepository.findById(id).orElse(null);
+
+        UrlResource resource = new UrlResource("file:" + file.getSavedPath());
+
+        String encodedFileName = UriUtils.encode(file.getOrgNm(), StandardCharsets.UTF_8);
+
+        // 파일 다운로드 대화상자가 뜨도록 하는 헤더를 설정해주는 것
+        // Content-Disposition 헤더에 attachment; filename="업로드 파일명" 값을 준다.
+        String contentDisposition = "attachment; filename=\"" + encodedFileName + "\"";
+
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,contentDisposition).body(resource);
+    }
+}
+이건 filecontroller야
+
+package com.mysite.sbb.file3;
+
+import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@Table(name = "file")
+@Entity
+@Getter
+public class FileEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="file_id")
+    private Long id;
+
+    private String orgNm;
+
+    private String savedNm;
+
+    private String savedPath;
+
+    @Builder
+    public FileEntity(Long id, String orgNm, String savedNm, String savedPath) {
+        this.id = id;
+        this.orgNm = orgNm;
+        this.savedNm = savedNm;
+        this.savedPath =savedPath;
+    }
+}
+이건 fileentity야
+
+package com.mysite.sbb.file3;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface FileRepository extends JpaRepository<FileEntity, Long> {
+}
+이건 filerepository야
+
+package com.mysite.sbb.file3;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
+
+@RequiredArgsConstructor
+@Service
+public class FileService {
+
+    @Value("${file.dir}")
+    private String fileDir;
+
+    private final FileRepository fileRepository;
+
+    public Long saveFile(MultipartFile files) throws IOException {
+        if (files.isEmpty()) {
+            return null;
+        }
+
+        //원래 파일 이름 추출
+        String origName = files.getOriginalFilename();
+
+        //파일 이름으로 쓸 uuid 생성
+        String uuid = UUID.randomUUID().toString();
+
+        //확장자 추출(ex : .png)
+        String extension = origName.substring(origName.lastIndexOf("."));
+
+        //uuid와 확장자 결합
+        String savedName = uuid + extension;
+
+        //파일을 불러올 때 사용할 파일 경로
+        String savedPath = fileDir + savedName;
+
+        //파일 엔티티 생성
+        FileEntity file = FileEntity.builder()
+                .orgNm(origName)
+                .savedNm(savedName)
+                .savedPath(savedPath)
+                .build();
+
+        //실제로 로컬에 uuid를 파일명으로 저장
+        files.transferTo(new File(savedPath));
+
+        //데이터베이스에 파일 정보 저장
+        FileEntity savedFile = fileRepository.save(file);
+
+        return savedFile.getId();
+    }
+}
+이건 fileService야
+
+<HTML xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<h2>파일 업로드</h2>
+
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+    <h4>단일 파일 업로드</h4>
+    <input type="file" name="file">
+
+    <h4>다중 파일 업로드</h4>
+    <input type="file" multiple="multiple" name="files">
+
+    <input type="submit"/>
+</form>
+</body>
+</html>
+이건 테스트파일 업로드html이야
+
+<HTML xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h3>이미지 출력</h3>
+<div th:each="imageFile : ${all} ">
+    <img  th:src="|/images/${imageFile.id}|" width="150" height="150">
+    <p th:text="${imageFile.orgNm}"></p>
+</div>
+
+<h3>파일 다운로드</h3>
+<div th:each="file : ${all}">
+    <a th:href="|/attach/${file.id}|" th:text="${file.orgNm}"></a>
+</div>
+</body>
+</html>
+이건 테스트파일 뷰html이야
+
+내가올린 파일을 바탕으로 게시글 업로드에 테스트업로드처럼 첨부파일을 올리고 싶어 게시글entity의 id를 종속성으로 받고 파일entity와 연결시켜 상세 페이지에 
+테스트뷰 처럼 올리고 싶어
+
+
+
+
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.answer.Answer;
+import com.mysite.sbb.file3.FileEntity;
+import com.mysite.sbb.user.SiteUser;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+
+@Getter
+@Setter
+@Entity
+public class Question {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(length = 200)
+    private String subject;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private LocalDateTime createDate;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE)
+    private List<Answer> answerList;
+
+    @ManyToOne
+    private SiteUser author;
+
+    private LocalDateTime modifyDate;
+
+    @Column(columnDefinition = "integer default 0", nullable = false)
+    private Integer view_count = 0;
+
+    @ManyToMany
+    Set<SiteUser> voter;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<FileEntity> files;
+
+    public void incrementViewCount() {
+        this.view_count +=1;
+    }
+}이건 QuestionEntity파일이야
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.answer.AnswerForm;
+import com.mysite.sbb.file3.FileEntity;
+import com.mysite.sbb.file3.FileRepository;
+import com.mysite.sbb.user.SiteUser;
+import com.mysite.sbb.user.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.io.IOException;
+import java.security.Principal;
+import java.util.List;
+
+@RequestMapping("/question")
+@RequiredArgsConstructor
+@Controller
+public class QuestionController {
+
+    private final QuestionService questionService;
+    private final UserService userService;
+    private final FileRepository fileRepository;
+
+    @GetMapping("/list")
+    public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page,
+                       @RequestParam(value = "kw", defaultValue = "") String kw) {
+        Page<Question> paging = this.questionService.getList(page, kw);
+        model.addAttribute("paging", paging);
+        model.addAttribute("kw", kw);
+        return "question_list";
+    }
+
+    @GetMapping(value = "/detail/{id}")
+    public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm) {
+        Question question = this.questionService.getQuestion(id);
+        question.incrementViewCount();
+        model.addAttribute("question",question);
+        return "question_detail";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/create")
+    public String questionCreate(QuestionForm questionForm) {
+        return "question_form";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/create")
+    public String questionCreate(@Valid QuestionForm questionForm,
+                                 BindingResult bindingResult,
+                                 Principal principal,
+                                 @RequestParam("files")List<MultipartFile> files,
+                                 RedirectAttributes redirectAttributes) throws IOException {
+        if (files.size() > 3) {
+            redirectAttributes.addFlashAttribute("error", "파일은 최대 3개까지 업로드 가능합니다.");
+            return "redirect:/create";
+        }
+
+        if (bindingResult.hasErrors()) {
+            return "question_form";
+        }
+        SiteUser siteUser = this.userService.getUser(principal.getName());
+        this.questionService.create(questionForm.getSubject(), questionForm.getContent(), siteUser, files);
+        return "redirect:/question/list"; // 질문 등록후 저장목록으로 이동
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/modify/{id}")
+    public String questionModify(QuestionForm questionForm, @PathVariable("id") Integer id, Model model, Principal principal) {
+        Question question = this.questionService.getQuestion(id);
+        if(!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"수정권한이 없습니다.");
+        }
+        List<FileEntity> files = fileRepository.findByQuestion(question);
+        questionForm.setSubject(question.getSubject());
+        questionForm.setContent(question.getContent());
+        return "question_form";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/modify/{id}")
+    public String questionModify(@Valid QuestionForm questionForm, BindingResult bindingResult,
+                                 @RequestParam("files") List<MultipartFile> files,
+                                 Principal principal, @PathVariable("id") Integer id,
+                                 RedirectAttributes redirectAttributes) throws IOException {
+        if (bindingResult.hasErrors()) {
+            return "question_form";
+        }
+        Question question = this.questionService.getQuestion(id);
+        if (!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "수정권한이 없습니다.");
+        }
+
+        if (files.size() > 3) {
+            redirectAttributes.addFlashAttribute("error", "파일은 최대 3개까지 업로드 가능합니다.");
+            return "redirect:/question/modify/" +id;
+        }
+        this.questionService.modify(question, questionForm.getSubject(), questionForm.getContent(), files);
+        return String.format("redirect:/question/detail/%s", id);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/delete/{id}")
+    public String questionDelete(Principal principal, @PathVariable("id") Integer id) {
+        Question question = this.questionService.getQuestion(id);
+        if (!question.getAuthor().getUsername().equals(principal.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "삭제권한이 없습니다.");
+        }
+        this.questionService.delete(question);
+        return "redirect:/";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/vote/{id}")
+    public String questionVote(Principal principal, @PathVariable("id") Integer id) {
+        Question question = this.questionService.getQuestion(id);
+        SiteUser siteUser = this.userService.getUser(principal.getName());
+        this.questionService.vote(question, siteUser);
+        return String.format("redirect:/question/detail/%s", id);
+    }
+
+}이건 QuestionController 파일이야
+
+package com.mysite.sbb.question;
+
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+@Getter
+@Setter
+public class QuestionForm {
+    @NotEmpty(message = "제목은 필수항목입니다.")
+    @Size(max = 200)
+    private String subject;
+
+    @NotEmpty(message = "내용은 필수항목입니다.")
+    private String content;
+
+    private List<MultipartFile> files;
+}이건 QuestionForm파일이야
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.user.SiteUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface QuestionRepository extends JpaRepository<Question, Integer> {
+    Question findBySubject(String subject);
+    Question findBySubjectAndContent(String subject, String Content);
+    List<Question> findBySubjectLike(String subject);
+    Page<Question> findAll(Pageable pageable);
+    Page<Question> findAll(Specification<Question> spec, Pageable pageable);
+    Long countByAuthor(SiteUser author);
+}이건 QuestionRepository파일이야
+
+package com.mysite.sbb.question;
+
+import com.mysite.sbb.DataNotFoundException;
+import com.mysite.sbb.answer.Answer;
+import com.mysite.sbb.file3.FileService;
+import com.mysite.sbb.user.SiteUser;
+import jakarta.persistence.criteria.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@RequiredArgsConstructor
+@Service
+public class QuestionService {
+
+    private final QuestionRepository questionRepository;
+    private final FileService fileService;
+
+    private Specification<Question> search(String kw) {
+        return new Specification<>() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public Predicate toPredicate(Root<Question> q, CriteriaQuery<?> query, CriteriaBuilder cb) {
+                query.distinct(true); //중복을 제거
+                Join<Question, SiteUser> u1 = q.join("author", JoinType.LEFT);
+                Join<Question, Answer> a = q.join("answerList", JoinType.LEFT);
+                Join<Answer, SiteUser> u2 = a.join("author", JoinType.LEFT);
+                return cb.or(cb.like(q.get("subject"), "%" + kw + "%"), //제목
+                        cb.like(q.get("content"),"%" + kw + "%"), //내용
+                        cb.like(u1.get("username"),"%" + kw + "%"), // 질문 작성자
+                        cb.like(a.get("content"),"%" + kw + "%"), // 답변 내용
+                        cb.like(u2.get("username"),"%" + kw + "%")); // 답변 작성자
+            }
+        };
+    }
+
+    public Page<Question> getList(int page, String kw) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts));
+        Specification<Question> spec = search(kw);
+        return this.questionRepository.findAll(spec, pageable);
+    }
+
+    public List<Question> getList() {
+        return this.questionRepository.findAll();
+    }
+
+    public Question getQuestion(Integer id) {
+        Optional<Question> question1 = this.questionRepository.findById(id);
+        if (question1.isPresent()) {
+            Question question = question1.get();
+
+            //조회수 증가 로직
+            question.incrementViewCount(); // Question 클래스의 조회수 증가 메서드 호출
+            this.questionRepository.save(question); // 변경된 객체 저장
+
+            return question;
+        } else {
+            throw new DataNotFoundException("question not found");
+        }
+    }
+
+    public void create(String subject, String content, SiteUser user, List<MultipartFile> files) throws IOException {
+        Question q = new Question();
+        q.setSubject(subject);
+        q.setContent(content);
+        q.setCreateDate(LocalDateTime.now());
+        q.setAuthor(user);
+        q.setView_count(0);
+        this.questionRepository.save(q);
+
+        for (MultipartFile file : files) {
+            fileService.saveFile(file, q);
+        }
+    }
+
+    public void modify(Question question, String subject,String content, List<MultipartFile> files) throws IOException {
+        question.setSubject(subject);
+        question.setContent(content);
+        question.setModifyDate(LocalDateTime.now());
+        this.questionRepository.save(question);
+
+        fileService.deleteAllFilesForQuestion(question);
+        for (MultipartFile file : files) {
+            fileService.saveFile(file, question);
+        }
+    }
+
+    public Page<Question> getList(int page) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        // page - 1을 사용하여 사용자의 입력(1부터 시작)을 Pageable의 0부터 시작하는 인덱스에 맞춥니다.
+        Pageable pageable = PageRequest.of(page - 1, 10, Sort.by(sorts));
+        return this.questionRepository.findAll(pageable);
+    }
+
+    public void delete(Question question) {
+        this.questionRepository.delete(question);
+    }
+
+    public void vote(Question question, SiteUser siteUser) {
+        question.getVoter().add(siteUser);
+        this.questionRepository.save(question);
+    }
+
+    public Long getQuestionCount(SiteUser author) {
+        return questionRepository.countByAuthor(author);
+    }
+}이건 QuestionService파일이야
+
+
+package com.mysite.sbb.file3;
+
+import com.mysite.sbb.question.Question;
+import com.mysite.sbb.question.QuestionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriUtils;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+@RequiredArgsConstructor
+@Controller
+public class FileController {
+
+    private final FileService fileService;
+    private final FileRepository fileRepository;
+    private final QuestionService questionService;
+
+    @GetMapping("/upload")
+    public String fileUploadForm() {
+
+        return "testupload";
+    }
+
+    @PostMapping("/upload")
+    public String fileUpload(@RequestParam("file")MultipartFile file,
+                             @RequestParam("files") List<MultipartFile> files,
+                             @RequestParam("questionId") Integer questionId) throws IOException {
+        Question question = questionService.getQuestion(questionId);
+
+        if (question == null) {
+            return "redirect:/";
+        }
+
+        fileService.saveFile(file, question);
+
+        for(MultipartFile multipartFile : files) {
+            fileService.saveFile(multipartFile, question);
+        }
+
+        return "redirect:/question/detail/" + questionId;
+    }
+
+    @GetMapping("/view")
+    public String view(Model model) {
+
+        List<FileEntity> files = fileRepository.findAll();
+        model.addAttribute("all",files);
+        return "testview";
+    }
+
+
+    //   이미지 출력
+    @GetMapping("/images/{fileId}")
+    @ResponseBody
+    public Resource downloadImage(@PathVariable("fileId") Long id, Model model) throws IOException{
+
+        FileEntity file = fileRepository.findById(id).orElse(null);
+        return new UrlResource("file:" + file.getSavedPath());
+    }
+
+    // 첨부 파일 다운로드
+    @GetMapping("/attach/{id}")
+    public ResponseEntity<Resource> downloadAttach(@PathVariable Long id) throws MalformedURLException {
+
+        FileEntity file = fileRepository.findById(id).orElse(null);
+
+        UrlResource resource = new UrlResource("file:" + file.getSavedPath());
+
+        String encodedFileName = UriUtils.encode(file.getOrgNm(), StandardCharsets.UTF_8);
+
+        // 파일 다운로드 대화상자가 뜨도록 하는 헤더를 설정해주는 것
+        // Content-Disposition 헤더에 attachment; filename="업로드 파일명" 값을 준다.
+        String contentDisposition = "attachment; filename=\"" + encodedFileName + "\"";
+
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,contentDisposition).body(resource);
+    }
+}이건 FileController 파일이야
+
+package com.mysite.sbb.file3;
+
+import com.mysite.sbb.question.Question;
+import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@Table(name = "file")
+@Entity
+@Getter
+public class FileEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="file_id")
+    private Long id;
+
+    private String orgNm;
+
+    private String savedNm;
+
+    private String savedPath;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id")
+    private Question question;
+
+    @Builder
+    public FileEntity(Long id, String orgNm, String savedNm, Question questn,String savedPath) {
+        this.id = id;
+        this.orgNm = orgNm;
+        this.savedNm = savedNm;
+        this.question = questn;
+        this.savedPath =savedPath;
+    }
+}이건 FileEntity파일이야
+
+package com.mysite.sbb.file3;
+
+import com.mysite.sbb.question.Question;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface FileRepository extends JpaRepository<FileEntity, Long> {
+    List<FileEntity> findByQuestion(Question question);
+}이건 FileRepository파일이야
+
+package com.mysite.sbb.file3;
+
+import com.mysite.sbb.question.Question;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+
+@RequiredArgsConstructor
+@Service
+public class FileService {
+
+    @Value("${file.dir}")
+    private String fileDir;
+
+    private final FileRepository fileRepository;
+
+    public Long saveFile(MultipartFile files, Question question) throws IOException {
+        if (files.isEmpty()) {
+            return null;
+        }
+
+        //원래 파일 이름 추출
+        String origName = files.getOriginalFilename();
+
+        //파일 이름으로 쓸 uuid 생성
+        String uuid = UUID.randomUUID().toString();
+
+        //확장자 추출(ex : .png)
+        String extension = origName.substring(origName.lastIndexOf("."));
+
+        //uuid와 확장자 결합
+        String savedName = uuid + extension;
+
+        //파일을 불러올 때 사용할 파일 경로
+        String savedPath = fileDir + savedName;
+
+        //파일 엔티티 생성
+        FileEntity file = FileEntity.builder()
+                .orgNm(origName)
+                .savedNm(savedName)
+                .savedPath(savedPath)
+                .questn(question)
+                .build();
+
+        //실제로 로컬에 uuid를 파일명으로 저장
+        files.transferTo(new File(savedPath));
+
+        //데이터베이스에 파일 정보 저장
+        FileEntity savedFile = fileRepository.save(file);
+
+        return savedFile.getId();
+    }
+
+    public void deleteAllFilesForQuestion(Question question) {
+        List<FileEntity> files = fileRepository.findByQuestion(question);
+        for (FileEntity file : files) {
+            fileRepository.delete(file);
+            new File(file.getSavedPath()).delete();
+        }
+    }
+}이건 FileService파일이야
+
+
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+<div layout:fragment="content" class="container">
+    <h5 class="my-3 border-bottom pb-2">질문등록</h5>
+    <form th:object="${questionForm}" method="post" enctype="multipart/form-data" onsubmit="return validateFiles(this.filesElement);">
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <input type="hidden" name="view_count" value="-1">
+        <div th:replace="~{form_errors :: formErrorsFragment}"></div>
+        <div class="mb-3">
+            <label for="subject" class="form-label">제목</label>
+            <input type="text" th:field="*{subject}" name="subject" id="subject" class="form-control">
+        </div>
+        <div class="mb-3">
+            <label for="content" class="form-label">내용</label>
+            <textarea name="content" th:field="*{content}" id="content" class="form-control" rows="10"></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="files" class="form-label">파일 첨부</label>
+            <input type="file" multiple="multiple" name="files" class="form-control" onchange="validateFiles(this);">
+        </div>
+        <input type="submit" value="저장하기" class="btn btn-primary my-2">
+    </form>
+    <script>
+        var simplemde = new SimpleMDE({element: document.getElementById("content"),hideIcons: ["image"]});
+        function validateFiles(inputFile) {
+        var maxCount = 3;
+        if (inputFile.files.length > maxCount) {
+            alert("파일은 최대 3개까지 업로드 가능합니다.");
+            inputFile.value = "";  // 선택된 파일을 리셋
+            return false;
+        }
+        return true;
+}
+    </script>
+</div>
+</html>이건 게시글 등록 html이야
+
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout}">
+<div layout:fragment="content" class="container my-3">
+    <!-- 질문 -->
+    <h2 class="border-bottom py-2" th:text="${question.subject}"></h2>
+    <div class="card my-3">
+        <div class="card-body">
+            <div class="card-text" th:utext="${@commonUtil.markdown(question.content)}"></div>
+            <div th:each="file : ${question.files}">
+                <img th:src="|/images/${file.id}|" width="150" height="150">
+                <p th:text="${file.orgNm}"></p>
+            </div>
+            <div th:each="file : ${question.files}">
+                <a th:href="|/attach/${file.id}|" th:text="${file.orgNm}"></a>
+            </div>
+            <div class="d-flex justify-content-end">
+                <div th:if="${question.modifyDate != null}" class="badge bg-light text-dark p-2 text-start mx-3">
+                    <div class="mb-2">마지막 수정일</div>
+                    <div th:text="${#temporals.format(question.modifyDate, 'yyyy년mm월dd일 HH시mm분')}"></div>
+                </div>
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <div class="mb-2">
+                        <span th:if="${question.author != null}" th:text="${question.author.username}"></span>
+                    </div>
+                    <div th:text="${#temporals.format(question.createDate, 'yyyy년MM월dd일 HH시mm분')}"></div>
+                </div>
+            </div>
+            <div class="my-3">
+                <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
+                   th:data-uri="@{|/question/vote/${question.id}|}">
+                    추천
+                    <span class="badge rounded-pill bg-success" th:text="${#lists.size(question.voter)}"></span>
+                </a>
+                <a th:href="@{|/question/modify/${question.id}|}" class="btn btn-sm btn-outline-secondary"
+                   sec:authorize="isAuthenticated()"
+                   th:if="${question.author != null and #authentication.getPrincipal().getUsername() == question.author.username}"
+                   th:text="수정"></a>
+                <a href="javascript:void(0);" th:data-uri="@{|/question/delete/${question.id}|}"
+                   class="delete btn btn-sm btn-outline-secondary" sec:authorize="isAuthenticated"
+                   th:if="${question.author != null and #authentication.getPrincipal().getUsername() == question.author.username}"
+                   th:text="삭제"></a>
+            </div>
+        </div>
+    </div>
+    <!-- 답변의 갯수 표시 -->
+    <h5 class="border-bottom my-3 py-2"
+        th:text="|${#lists.size(question.answerList)}개의 댓글이 있습니다.|"></h5>
+    <!-- 답변 반복 시작 -->
+    <div class="card my-3" th:each="answer : ${question.answerList}">
+        <div class="card-body">
+            <div class="card-text" th:utext="${@commonUtil.markdown(answer.content)}"></div>
+            <div class="d-flex justify-content-end">
+                <div th:if="${answer.modifyDate != null}" class="badge bg-light text-dark p-2 text-start mx-3">
+                    <div class="mb-2">마지막 수정일</div>
+                    <div th:text="${#temporals.format(answer.modifyDate, 'yyyy년mm월dd일 HH시mm분')}"></div>
+                </div>
+                <div class="badge bg-light text-dark p-2 text-start">
+                    <div class="mb-2">
+                        <span th:if="${answer.author != null}" th:text="${answer.author.username}"></span>
+                    </div>
+                    <div th:text="${#temporals.format(answer.createDate, 'yyyy년MM월dd일 HH시mm분')}"></div>
+                </div>
+            </div>
+            <div class="my-3">
+                <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
+                   th:data-uri="@{|/answer/vote/${answer.id}|}">
+                    추천
+                    <span class="badge rounded-pill bg-success" th:text="${#lists.size(answer.voter)}"></span>
+                </a>
+                <a th:href="@{|/answer/modify/${answer.id}|}" class="btn btn-sm btn-outline-secondary"
+                   sec:authorize="isAuthenticated()"
+                   th:if="${answer.author != null and #authentication.getPrincipal().getUsername() == answer.author.username}"
+                   th:text="수정"></a>
+                <a href="javascript:void(0);" th:data-uri="@{|/answer/delete/${answer.id}}"
+                   class="delete btn btn-sm btn-outline-secondary" sec:authorize="isAuthenticated"
+                   th:if="${answer.author != null and #authentication.getPrincipal().getUsername() == answer.author.username}"
+                   th:text="삭제"></a>
+            </div>
+        </div>
+    </div>
+    <!-- 답변 반복 끝  -->
+    <!-- 답변 작성 -->
+    <form th:action="@{|/answer/create/${question.id}|}" th:object="${answerForm}" method="post" class="my-3">
+        <div th:replace="~{form_errors :: formErrorsFragment}"></div>
+        <textarea sec:authorize="isAnonymous()" disabled th:field="*{content}" class="form-control" rows="10"></textarea>
+        <textarea sec:authorize="isAuthenticated()" th:field="*{content}" class="form-control" rows="10"></textarea>
+        <input type="submit" value="댓글등록" class="btn btn-primary my-2">
+    </form>
+</div>
+<script layout:fragment="script" type='text/javascript'>
+    const delete_elements = document.getElementsByClassName("delete");
+    Array.from(delete_elements).forEach(function(element) {
+        element.addEventListener('click', function() {
+            if(confirm("정말로 삭제하시겠습니까?")) {
+                location.href = this.dataset.uri;
+            };
+        });
+    });
+    const recommend_elements = document.getElementsByClassName("recommend");
+Array.from(recommend_elements).forEach(function(element) {
+    element.addEventListener('click', function() {
+        if(confirm("정말로 추천하시겠습니까?")) {
+            location.href = this.dataset.uri;
+        };
+    });
+});
+
+    // 마크다운에디터
+        var simplemde = new SimpleMDE({element: document.getElementById("content"),hideIcons: ["image"]});
+</script>
+</html>이건 상세 게시글 html이야
+
+package com.mysite.sbb.file3;
+
+import com.mysite.sbb.question.Question;
+import jakarta.persistence.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@Table(name = "file")
+@Entity
+@Getter
+public class FileEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="file_id")
+    private Long id;
+
+    private String orgNm;
+
+    private String savedNm;
+
+    private String savedPath;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id")
+    private Question question;
+
+    @Builder
+    public FileEntity(Long id, String orgNm, String savedNm, Question questn,String savedPath) {
+        this.id = id;
+        this.orgNm = orgNm;
+        this.savedNm = savedNm;
+        this.question = questn;
+        this.savedPath =savedPath;
+    }
+}
+이건 FileEntity야
+
+package com.mysite.sbb.file3;
+
+import com.mysite.sbb.question.Question;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@RequiredArgsConstructor
+@Service
+public class FileService {
+
+    @Value("${file.dir}")
+    private String fileDir;
+
+    private final FileRepository fileRepository;
+
+    public Long saveFile(MultipartFile files, Question question) throws IOException {
+        if (files.isEmpty()) {
+            return null;
+        }
+
+        //원래 파일 이름 추출
+        String origName = files.getOriginalFilename();
+
+        //파일 이름으로 쓸 uuid 생성
+        String uuid = UUID.randomUUID().toString();
+
+        //확장자 추출(ex : .png)
+        String extension = origName.substring(origName.lastIndexOf("."));
+
+        //uuid와 확장자 결합
+        String savedName = uuid + extension;
+
+        //파일을 불러올 때 사용할 파일 경로
+        String savedPath = fileDir + savedName;
+
+        //파일 엔티티 생성
+        FileEntity file = FileEntity.builder()
+                .orgNm(origName)
+                .savedNm(savedName)
+                .savedPath(savedPath)
+                .questn(question)
+                .build();
+
+        //실제로 로컬에 uuid를 파일명으로 저장
+        files.transferTo(new File(savedPath));
+
+        //데이터베이스에 파일 정보 저장
+        FileEntity savedFile = fileRepository.save(file);
+
+        return savedFile.getId();
+    }
+
+    public void deleteFilesByIds(List<Long> fileIds) {
+        if (fileIds == null || fileIds.isEmpty()) {
+            return; //아무것도 삭제하지 않음
+        }
+        for (Long fileId: fileIds) {
+            Optional<FileEntity> fileEntity = fileRepository.findById(fileId);
+            if (fileEntity.isPresent()) {
+                fileRepository.delete(fileEntity.get());
+                new File(fileEntity.get().getSavedPath()).delete();
+            }
+        }
+    }
+
+    public void deleteAllFilesForQuestion(Question question) {
+        List<FileEntity> files = fileRepository.findByQuestion(question);
+        for (FileEntity file : files) {
+            fileRepository.delete(file);
+            new File(file.getSavedPath()).delete();
+        }
+    }
+}
+이건 FileService야
+이걸 보고 더욱 정확히 설명해줘
+
+@Getter
+@Setter
+@Entity
+public class Answer {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    private LocalDateTime createDate;
+
+    @ManyToOne
+    private Question question;
+
+    @ManyToOne
+    private SiteUser author;
+
+    private LocalDateTime modifyDate;
+
+    @ManyToMany
+    Set<SiteUser> voter;
+}이건 AnswerEntity야
+
+@PreAuthorize("isAuthenticated()")
+    @GetMapping("/vote/{id}")
+    public String answerVote(Principal principal, @PathVariable("id") Integer id) {
+        Answer answer = this.answerService.getAnswer(id);
+        SiteUser siteUser = this.userService.getUser(principal.getName());
+        this.answerService.vote(answer, siteUser);
+        return String.format("redirect:/question/detail/%s", answer.getQuestion().getId());
+    }이건 AnswerController의 추천메소드야
+
+public void vote(Answer answer, SiteUser siteUser) {
+        answer.getVoter().add(siteUser);
+        this.answerRepository.save(answer);
+    }이건 AnswerService의 추천 메소드야
+

@@ -29,7 +29,14 @@
             </ul>
             <input type="hidden" id="currentFileCount" th:value="${#lists.size(question.files)}" />
         </div>
-        <input type="file" multiple="multiple" name="files" class="form-control">
+        <div class="upload-box">
+            <div id="drop-file" class="drag-file">
+                <img src="https://img.icons8.com/pastel-glyph/2x/image-file.png" alt="파일 아이콘" class="image">
+                <p class="message">Drag files to upload</p>
+            </div>
+        </div>
+        <label class="file-label" for="files">Choose File</label>
+        <input type="file" multiple="multiple" name="files" id="files" class="form-control">
         <!-- 등록/수정 버튼 -->
         <input type="submit" th:value="${action == 'modify' ? '수정하기' : '저장하기'}" class="btn btn-primary">
     </form>
@@ -49,6 +56,33 @@
         }
         return true;
     }
+        function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+        const dropArea = document.getElementById("drop-file");
+
+function highlight(e) {
+  preventDefaults(e);
+  dropArea.classList.add("highlight");
+}
+
+function unhighlight(e) {
+  preventDefaults(e);
+  dropArea.classList.remove("highlight");
+}
+
+dropArea.addEventListener("dragenter", highlight, false);
+dropArea.addEventListener("dragover", highlight, false);
+dropArea.addEventListener("dragleave", unhighlight, false);
+        function handleDrop(e) {
+  unhighlight(e);
+  let dt = e.dataTransfer;
+  let files = dt.files;
+
+  console.log(files);
+
+}
     </script>
 </main>
 </html>
