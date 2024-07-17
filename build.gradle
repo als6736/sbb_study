@@ -36,6 +36,7 @@ dependencies {
 	implementation 'org.commonmark:commonmark:0.21.0'
 	implementation 'commons-fileupload:commons-fileupload:1.4'
 	implementation 'commons-io:commons-io:2.8.0'
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
 tasks.named('test') {

@@ -16,11 +16,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Controller
@@ -93,5 +96,78 @@ public class UserController {
         List<Answer> answerList = answerService.getAnswerTop5LatestByUser(user);
         model.addAttribute("answerList", answerList);
         return "mypage";
+    }
+
+    @PreAuthorize("isAnonymous()")
+    @GetMapping("/pw_find")
+    public String showFindPassWord(UserPWFindForm userPWFindForm) {
+        return "pw_find";
+    }
+
+    @PreAuthorize("isAnonymous()")
+    @PostMapping("/pw_find")
+    public String findPassWord(Model model, UserPWFindForm userPWFindForm, BindingResult bindingResult, RedirectAttributes redirectAttributes) {
+        if(bindingResult.hasErrors()) {
+            return "pw_find";
+        }
+
+        SiteUser user = userService.getUser(userPWFindForm.getUsername());
+
+        if(user == null) {
+            bindingResult.reject("notFindUser", "일치하는 사용자가 없습니다.");
+            return "pw_find";
+        }
+
+        if(!user.getEmail().equals(userPWFindForm.getEmail())) {
+            bindingResult.reject("notCorrectEmail","등록된 회원 정보와 이메일이 다릅니다.");
+            return "pw_find";
+        }
+
+        String tempPW = userService.setTemporaryPW(user);
+
+        //이메일 전송
+        //컨트롤러에서 메일 발송 요청
+        userService.sendEmail(userPWFindForm.getEmail(), user.getUsername(), tempPW);
+
+        //로그인 페이지에서 보여줄 성공 메시지
+        redirectAttributes.addFlashAttribute("successMessage", "임시 비밀번호가 이메일로 전송되었습니다. 이메일 확인 후 로그인 해주세요");
+
+        return "redirect:/user/login";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/change/passwd")
+    public String showChangePw(@ModelAttribute("pwChangeForm") PWChangeForm pwChangeForm) {
+        return "pw_change";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/change/passwd")
+    public String changePW(@Valid @ModelAttribute("pwChangeForm") PWChangeForm pwChangeForm,
+                           BindingResult bindingResult, Model model, Principal principal,
+                           RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            return "pw_change";
+        }
+
+        SiteUser user = userService.getUser(principal.getName());
+
+        // 이전 패스워드와 맞지 않을 경우
+        if (!passwordEncoder.matches(pwChangeForm.getPrePassword(), user.getPassword())) {
+            bindingResult.reject("notMatchPW", "이전 비밀번호가 일치하지 않습니다.");
+            return "pw_change";
+        }
+        //새 비밀번호, 비밀번호 확인 창 일치하지 않을경우
+        if (!pwChangeForm.getNewPassword1().equals(pwChangeForm.getNewPassword2())) {
+            bindingResult.reject("notMatchNewPW", "새 비밀번호와 확인이 일치하지 않습니다.");
+            return "pw_change";
+        }
+
+        userService.updatePassWord(user, pwChangeForm.getNewPassword1());
+
+        //로그인 페이지에서 보여줄 성공 메시지를 플래시 애트리뷰트로 추가
+        redirectAttributes.addFlashAttribute("successMessage","비밀번호 변경 성공!");
+
+        return "redirect:/user/mypage";
     }
 }
