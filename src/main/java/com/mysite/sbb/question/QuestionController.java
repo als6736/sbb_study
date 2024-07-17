@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RequestMapping("/question")
@@ -54,7 +55,7 @@ public class QuestionController {
 
         SiteUser siteUser = userService.getUser(principal.getName());
 
-        if(siteUser.getId() != id) {
+        if(!Objects.equals(siteUser.getId(), id)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "조회 권한이 없습니다.");
         }
 
@@ -70,7 +71,7 @@ public class QuestionController {
                                              @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "") String kw, Principal principal) {
         SiteUser siteUser = userService.getUser(principal.getName());
 
-        if (siteUser.getId() != id) {
+        if (!Objects.equals(siteUser.getId(), id)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "조회 권한이 없습니다.");
         }
 
