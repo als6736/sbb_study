@@ -11,7 +11,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -72,7 +74,8 @@ public class QuestionService {
         }
     }
 
-    public void create(String subject, String content, SiteUser user, List<MultipartFile> files) throws IOException {
+    @Transactional
+    public Question create(String subject, String content, SiteUser user, List<MultipartFile> files) throws IOException {
         Question q = new Question();
         q.setSubject(subject);
         q.setContent(content);
@@ -84,6 +87,7 @@ public class QuestionService {
         for (MultipartFile file : files) {
             fileService.saveFile(file, q);
         }
+        return q;
     }
 
     public void modify(Question question, String subject,String content, List<MultipartFile> newfiles, List<Long> deleteFileIds) throws IOException {
@@ -111,10 +115,12 @@ public class QuestionService {
         return this.questionRepository.findAll(pageable);
     }
 
+    @Transactional
     public void delete(Question question) {
         this.questionRepository.delete(question);
     }
 
+    @Transactional
     public void vote(Question question, SiteUser siteUser) {
         if (question.getVoter().contains(siteUser)){
             question.getVoter().remove(siteUser);
@@ -126,5 +132,24 @@ public class QuestionService {
 
     public Long getQuestionCount(SiteUser author) {
         return questionRepository.countByAuthor(author);
+    }
+
+    public List<Question> getQuestionTop5LatesByUser(SiteUser author) {
+        return questionRepository.findTop5ByAuthorOrderByCreateDateDesc(author);
+    }
+
+    // 유저 개인별 질문 모음(질문자)
+    public Page<Question> getPersonalQuestionListByQuestionAuthorId(int page, String kw, Long authorId) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts)); //페이지 번호, 갯수
+        return questionRepository.findAllByKeywordAndAuthorId(kw, authorId, pageable);
+    }
+    // 유저 개인별 질문 모음(답변자)
+    public Page<Question> getPersonalQuestionListByAnswer_AuthorId(int page, String kw, Long answerAuthorId) {
+        List<Sort.Order> sorts = new ArrayList<>();
+        sorts.add(Sort.Order.desc("createDate"));
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts)); //페이지 번호, 갯수
+        return questionRepository.findAllByKeywordAndAndAnswer_AuthorId(kw, answerAuthorId, pageable);
     }
 }

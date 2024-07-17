@@ -3,25 +3,112 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
-<div layout:fragment="content" class="container my-3">
-    <div class="my-3 border-bottom">
-        <div>
-            <h4>내정보</h4>
+<head>
+    <title>마이페이지</title>
+</head>
+<body>
+<main layout:fragment="content" class="container d-flex flex-column max-width-xl align-items-center justify-content-center gap-3">
+    <div class="card d-flex flex-column align-items-center" style="margin-top : 30px;">
+        <div class="card-body gap-3">
+            <div class="d-flex align-items-baseline justify-content-center gap-2">
+                <i class="fa-solid fa-user" style="color: #75a8ff;"></i>
+                <p>내 정보</p>
+            </div>
+            <div class="d-flex align-items-baseline gap-1">
+                <i class="fa-regular fa-circle-check" style="color: #91c0fd;"></i>
+                <p>사용자 Id :</p>
+                <p th:text="${user.username}"></p>
+            </div>
+            <div class="d-flex gap-1 align-items-baseline">
+                <i class="fa-regular fa-circle-check" style="color: #91c0fd;"></i>
+                <p>e-mail :</p>
+                <p th:text="${user.email}"></p>
+            </div>
         </div>
     </div>
-        <div class="mb-3">
-            <label title="username" class="form-label">사용자ID</label>
-            <input type="text" class="form-control">
+
+    <div class="card d-flex flex-column align-items-center" style="margin-top : 10px;">
+        <div class="card-body gap-3">
+            <div class="d-flex align-items-baseline justify-content-center gap-2">
+                <i class="fa-solid fa-user" style="color: #75a8ff;"></i>
+                <p>나의 질문</p>
+                <p th:text="${'('+ questionCount+')'}"></p>
+                <a th:href="@{|/question/list/byQuestion/${user.id}|}">더보기</a>
+            </div>
+            <table class="table">
+                <thead class="table-dark">
+                <tr class="text-center">
+                    <th>제목</th>
+                    <th>조회수</th>
+                    <th>추천수</th>
+                    <th>작성일</th>
+                    <th>수정일</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="text-center" th:each="question, loop : ${questionList}">
+                    <td class="text-start">
+                        <a th:href="@{|/question/detail/${question.id}|}" th:text="${question.subject}"
+                           style="min-width:80px; padding: 12px 0;"></a>
+                        <span class="text-danger small ms-2"
+                              th:if="${#lists.size(question.answerList) > 0}"
+                              th:text="${#lists.size(question.answerList)}">
+                        </span>
+                    </td>
+                    <td th:text="${question.view_count}"></td>
+                    <td th:text="${#lists.size(question.voter)}"></td>
+                    <td th:text="${#temporals.format(question.createDate, 'yy년MM월dd일')}"
+                        style="min-width:150px; padding: 12px 0;"></td>
+                    <td th:if="${question.modifyDate == null}">-</td>
+                    <td th:if="${question.modifyDate != null}" th:text="${#temporals.format(question.modifyDate, 'yy년MM월dd일')}"
+                        style="min-width:150px; padding: 12px 0;"></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="mb-3">
-            <label title="password" class="form-label">비밀번호</label>
-            <input type="password" class="form-control">
+    </div>
+
+    <div class="card d-flex flex-column align-items-center" style="margin-top : 10px; margin-bottom : 30px">
+        <div class="card-body gap-3">
+            <div class="d-flex align-items-baseline justify-content-center gap-2">
+                <i class="fa-solid fa-user" style="color: #75a8ff;"></i>
+                <p>나의 답변</p>
+                <p th:text="${'('+ answerCount+')'}"></p>
+                <a th:href="@{|/question/list/byAnswer/${user.id}|}">더보기</a>
+            </div>
+            <table class="table">
+                <thead class="table-dark">
+                <tr class="text-center">
+                    <th>제목</th>
+                    <th>추천수</th>
+                    <th>작성일</th>
+                    <th>수정일</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="text-center" th:each="answer, loop : ${answerList}">
+                    <td class="text-start">
+                        <div class="d-flex gap-2 align-items-baseline">
+                            <i class="fa-regular fa-circle-question" style="color: #75a8ff;"></i>
+                            <a th:href="@{|/question/detail/${answer.question.id}#answer_${answer.id}|}" th:text="${answer.question.subject}"
+                               style="min-width:80px; padding: 12px 0;"></a>
+                        </div>
+                        <div class="d-flex gap-2 align-items-baseline">
+                            <i class="fa-solid fa-a" style="color: #75a8ff;"></i>
+                            <span th:text="${answer.content}" style="min-width:80px; padding: 12px 0;"></span>
+                        </div>
+                    </td>
+                    <td th:text="${#lists.size(answer.voter)}"></td>
+                    <td th:text="${#temporals.format(answer.createDate, 'yy년MM월dd일')}"
+                        style="min-width:150px; padding: 12px 0;"></td>
+                    <td th:if="${answer.modifyDate == null}">-</td>
+                    <td th:if="${answer.modifyDate != null}" th:text="${#temporals.format(answer.modifyDate, 'yy년MM월dd일')}"
+                        style="min-width:150px; padding: 12px 0;"></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="mb-3">
-            <label title="email" class="form-label">이메일</label>
-            <input type="email" class="form-control">
-        </div>
-    <a href="#" class="btn btn-dark">나의 글</a>
-    <a href="#" class="btn btn-dark">나의 댓글</a>
-</div>
+    </div>
+</main>
+</body>
 </html>

@@ -1,6 +1,8 @@
 package com.mysite.sbb.question;
 
+import com.mysite.sbb.answer.Answer;
 import com.mysite.sbb.answer.AnswerForm;
+import com.mysite.sbb.answer.AnswerService;
 import com.mysite.sbb.file3.FileEntity;
 import com.mysite.sbb.file3.FileRepository;
 import com.mysite.sbb.file3.FileService;
@@ -22,6 +24,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequestMapping("/question")
 @RequiredArgsConstructor
@@ -29,6 +33,7 @@ import java.util.List;
 public class QuestionController {
 
     private final QuestionService questionService;
+    private final AnswerService answerService;
     private final UserService userService;
     private final FileRepository fileRepository;
     private final FileService fileService;
@@ -42,6 +47,45 @@ public class QuestionController {
         return "question_list";
     }
 
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/list/byQuestion/{id}")
+    public String personalListByQuestionUserId(Model model, @PathVariable Long id, @RequestParam(defaultValue = "0") int page,
+                       @RequestParam(defaultValue = "") String kw, Principal principal) {
+
+        SiteUser siteUser = userService.getUser(principal.getName());
+
+        if(siteUser.getId() != id) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "조회 권한이 없습니다.");
+        }
+
+        Page<Question> paging = questionService.getPersonalQuestionListByQuestionAuthorId(page, kw, id);
+        model.addAttribute("user", siteUser);
+        model.addAttribute("paging", paging);
+        return "personal_list";
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/list/byAnswer/{id}")
+    public String personalListByAnswerUserId(Model model, @PathVariable Long id,
+                                             @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "") String kw, Principal principal) {
+        SiteUser siteUser = userService.getUser(principal.getName());
+
+        if (siteUser.getId() != id) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "조회 권한이 없습니다.");
+        }
+
+        // 총 답변 수 View에 나타내기 위함
+        Long answerCount = answerService.getAnswerCount(siteUser);
+        model.addAttribute("answerCount", answerCount);
+
+        Page<Question> paging = questionService.getPersonalQuestionListByAnswer_AuthorId(page, kw, id);
+        model.addAttribute("user", siteUser);
+        model.addAttribute("paging", paging);
+        // 동일한 템플릿 사용 -> 총 답변수로 표기하기 위함
+        model.addAttribute("type", "총 답변수");
+        return "personal_list";
+    }
+
     @GetMapping(value = "/detail/{id}")
     public String detail(Model model, @PathVariable("id") Integer id, AnswerForm answerForm, Principal principal) {
         Question question = this.questionService.getQuestion(id);
@@ -50,6 +94,11 @@ public class QuestionController {
         if (principal != null) {
             SiteUser currentUser = userService.getUser(principal.getName());
             hasVoted = question.getVoter().contains(currentUser);
+            model.addAttribute("answers", question.getAnswerList());
+
+            Map<Integer, Boolean> answerVotes = question.getAnswerList().stream()
+                    .collect(Collectors.toMap(Answer::getId, answer -> answer.getVoter().contains(currentUser)));
+            model.addAttribute("answerVotes", answerVotes);
         }
         model.addAttribute("question",question);
         model.addAttribute("hasVoted", hasVoted);
@@ -103,16 +152,6 @@ public class QuestionController {
         model.addAttribute("action", "modify");
         return "question_form";
     }
-//    public String questionModify(QuestionForm questionForm, @PathVariable("id") Integer id, Model model, Principal principal) {
-//        Question question = this.questionService.getQuestion(id);
-
-//        List<FileEntity> files = fileRepository.findByQuestion(question);
-//        model.addAttribute("files",files);
-//        questionForm.setSubject(question.getSubject());
-//        questionForm.setContent(question.getContent());
-//        model.addAttribute("question", question);
-//        return "question_form";
-//    }
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/modify/{id}")

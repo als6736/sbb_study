@@ -1,7 +1,9 @@
 package com.mysite.sbb.user;
 
 import com.mysite.sbb.DataNotFoundException;
+import com.mysite.sbb.answer.Answer;
 import com.mysite.sbb.answer.AnswerService;
+import com.mysite.sbb.question.Question;
 import com.mysite.sbb.question.QuestionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.security.Principal;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Controller
@@ -70,7 +73,7 @@ public class UserController {
 
     @GetMapping("/mypage")
     @PreAuthorize("isAuthenticated()")
-    public String mypage(Model model, Principal principal) {
+    public String showmyPage(Model model, Principal principal) {
         SiteUser user = userService.getUser(principal.getName());
 
         if (user == null) {
@@ -80,6 +83,15 @@ public class UserController {
 
         Long questionCount = questionService.getQuestionCount(user);
         model.addAttribute("questionCount", questionCount);
+
+        List<Question> questionList = questionService.getQuestionTop5LatesByUser(user);
+        model.addAttribute("questionList", questionList);
+
+        Long answerCount = answerService.getAnswerCount(user);
+        model.addAttribute("answerCount", answerCount);
+
+        List<Answer> answerList = answerService.getAnswerTop5LatestByUser(user);
+        model.addAttribute("answerList", answerList);
         return "mypage";
     }
 }

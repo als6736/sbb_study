@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -51,6 +52,14 @@ public class AnswerService {
             answer.getVoter().add(siteUser);
         }
         this.answerRepository.save(answer);
+    }
+
+    public Long getAnswerCount(SiteUser author) {
+        return answerRepository.countByAuthor(author);
+    }
+
+    public List<Answer> getAnswerTop5LatestByUser(SiteUser user){
+        return answerRepository.findTop5ByAuthorOrderByCreateDateDesc(user);
     }
 
 }

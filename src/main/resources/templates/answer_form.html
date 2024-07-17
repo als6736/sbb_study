@@ -3,7 +3,7 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout}">
-<div layout:fragment="content" class="container">
+<main layout:fragment="content" class="container">
     <h5 class="my-3 border-bottom pb-2">답변 수정</h5>
     <form th:object="${answerForm}" method="post">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
@@ -18,5 +18,5 @@
         // 마크다운에디터
         var simplemde = new SimpleMDE({element: document.getElementById("content"),hideIcons: ["image"]});
     </script>
-</div>
+</main>
 </html>

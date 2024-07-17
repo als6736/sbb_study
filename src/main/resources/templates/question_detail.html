@@ -75,9 +75,16 @@
                 </div>
             </div>
             <div class="my-3">
-                <a href="javascript:void(0);" class="recommend btn btn-sm btn-outline-secondary"
-                   th:data-uri="@{|/answer/vote/${answer.id}|}">
-                    추천
+                <a href="javascript:void(0);" th:href="@{/answer/vote/{id}(id=${answer.id})}"
+                   th:if="${isAuthenticated}"
+                   th:data-voted="${answerVotes[answer.id]}"
+                   class="Arecommend btn btn-sm btn-outline-secondary">
+                    <span th:text="${answerVotes[answer.id] ? '추천 취소' : '추천'}">Recommend</span>
+                    <span class="badge rounded-pill bg-success" th:text="${#lists.size(answer.voter)}"></span>
+                </a>
+                <a href="#" class="recommend btn btn-sm btn-outline-secondary"
+                   th:unless="${isAuthenticated}"
+                   th:data-uri="@{|/answer/vote/${answer.id}|}">추천
                     <span class="badge rounded-pill bg-success" th:text="${#lists.size(answer.voter)}"></span>
                 </a>
                 <a th:href="@{|/answer/modify/${answer.id}|}" class="btn btn-sm btn-outline-secondary"
@@ -114,6 +121,16 @@
         element.addEventListener('click', function() {
             const hasVoted = this.dataset.voted === 'true';
             const message = hasVoted ? "정말로 추천을 취소하시겠습니까?" : "정말로 추천하시겠습니까?";
+            if(confirm(message)) {
+                location.href = this.dataset.uri;
+            }
+        });
+    });
+    const Arecommend_elements = document.getElementsByClassName("Arecommend");
+    Array.from(Arecommend_elements).forEach(function(element) {
+        element.addEventListener('click', function() {
+            const AhasVoted = this.dataset.voted === 'true';
+            const message = AhasVoted ? "정말로 추천을 취소하시겠습니까?" : "정말로 추천하시겠습니까?";
             if(confirm(message)) {
                 location.href = this.dataset.uri;
             }
