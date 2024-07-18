@@ -20,6 +20,10 @@ public class QuestionForm {
 
     private List<MultipartFile> files;
 
+    private boolean isSecret;
+
+    private Integer id;
+
     //기본 생성자
     public QuestionForm() {}
 

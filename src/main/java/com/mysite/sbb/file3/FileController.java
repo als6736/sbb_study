@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,22 +34,24 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public String fileUpload(@RequestParam("file")MultipartFile file,
-                             @RequestParam("files") List<MultipartFile> files,
-                             @RequestParam("questionId") Integer questionId) throws IOException {
-        Question question = questionService.getQuestion(questionId);
+    @ResponseBody
+    public ResponseEntity<String> fileUpload(@RequestParam("files") List<MultipartFile> files,
+                                             @RequestParam("questionId") Integer questionId) {
+        try {
+            Question question = questionService.getQuestion(questionId);
+            if (question == null) {
+                return ResponseEntity.badRequest().body("Invalid question ID");
+            }
 
-        if (question == null) {
-            return "redirect:/";
+            for (MultipartFile multipartFile : files) {
+                fileService.saveFile(multipartFile, question);
+            }
+
+            return ResponseEntity.ok("Files uploaded successfully");
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the stack trace for debugging
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("File upload failed: " + e.getMessage());
         }
-
-        fileService.saveFile(file, question);
-
-        for(MultipartFile multipartFile : files) {
-            fileService.saveFile(multipartFile, question);
-        }
-
-        return "redirect:/question/detail/" + questionId;
     }
 
     @GetMapping("/view")

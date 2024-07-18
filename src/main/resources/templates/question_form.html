@@ -3,7 +3,7 @@
       layout:decorate="~{layout}">
 <main layout:fragment="content" class="container">
     <h5 class="my-3 border-bottom pb-2">질문등록</h5>
-    <form th:object="${questionForm}" method="post" enctype="multipart/form-data" onsubmit="return validateFiles(this);">
+    <form id="uploadForm" th:object="${questionForm}" method="post" enctype="multipart/form-data" onsubmit="return validateFiles(this);">
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         <input type="hidden" name="view_count" value="-1">
         <div th:replace="~{form_errors :: formErrorsFragment}"></div>
@@ -29,60 +29,88 @@
             </ul>
             <input type="hidden" id="currentFileCount" th:value="${#lists.size(question.files)}" />
         </div>
-        <div class="upload-box">
-            <div id="drop-file" class="drag-file">
-                <img src="https://img.icons8.com/pastel-glyph/2x/image-file.png" alt="파일 아이콘" class="image">
-                <p class="message">Drag files to upload</p>
+        <input type="file" multiple="multiple" name="files" id="files" class="form-control" onchange="handleFileSelect(this)">
+        <div id="progressContainer"></div>
+        <div class="mb-3">
+            <div class="form-check">
+                <input type="checkbox" th:field="*{Secret}" th:checked="${Secret}" class="form-check-input" id="Secret">
+                <input type="hidden" name="questionId" th:value="${questionForm.id}">
+                <label class="form-check-label" for="Secret">비밀글 설정</label>
             </div>
         </div>
-        <label class="file-label" for="files">Choose File</label>
-        <input type="file" multiple="multiple" name="files" id="files" class="form-control">
-        <!-- 등록/수정 버튼 -->
         <input type="submit" th:value="${action == 'modify' ? '수정하기' : '저장하기'}" class="btn btn-primary">
     </form>
     <script>
-        var simplemde = new SimpleMDE({element: document.getElementById("content"),hideIcons: ["image"]});
-        function validateFiles(form) {
-        var maxCount = 3;
-        var filesInput = form.querySelector('input[type="file"]');
-        var deleteCheckboxes = form.querySelectorAll('input[name="deleteFiles[]"]:checked').length;
-        var currentFilesCount = form.querySelector('#currentFileCount') ? parseInt(form.querySelector('#currentFileCount').value) - deleteCheckboxes : 0;
-        var totalFiles = currentFilesCount + filesInput.files.length;
+        var simplemde = new SimpleMDE({
+            element: document.getElementById("content"),
+            hideIcons: ["image"],
+            spellChecker: false
+        });
 
-        if (totalFiles > maxCount) {
-            alert("전체 파일은 최대 3개까지 업로드 가능합니다.\n현재 선택된 파일 수 포함 총: " + totalFiles);
-            filesInput.value = "";  // 선택된 파일을 리셋
-            return false;
+        function handleFileSelect(input) {
+            console.log("handleFileSelect called");
+            var form = input.closest('form');
+            var maxCount = 3;
+            var filesInput = input;
+            var deleteCheckboxes = form.querySelectorAll('input[name="deleteFiles[]"]:checked').length;
+            var currentFilesCount = form.querySelector('#currentFileCount') ? parseInt(form.querySelector('#currentFileCount').value) - deleteCheckboxes : 0;
+            var totalFiles = currentFilesCount + filesInput.files.length;
+
+            console.log("Total files to upload: ", totalFiles);
+
+            if (totalFiles > maxCount) {
+                alert("전체 파일은 최대 3개까지 업로드 가능합니다.\n현재 선택된 파일 수 포함 총: " + totalFiles);
+                filesInput.value = "";  // 선택된 파일을 리셋
+                return false;
+            }
+
+            // 파일 크기 확인 및 업로드 게이지바 초기화
+            var progressContainer = document.getElementById('progressContainer');
+            progressContainer.innerHTML = '';  // 기존 진행률 바 초기화
+
+            for (var i = 0; i < filesInput.files.length; i++) {
+                var file = filesInput.files[i];
+                var progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                progressBar.innerHTML = `
+                <div class="file-info">Uploading: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)</div>
+                <div class="progress" id="progress${i}" style="width: 0%;"></div>`;
+                progressContainer.appendChild(progressBar);
+
+                console.log("Uploading file: ", file.name);
+                uploadFile(file, i, form);
+            }
         }
-        return true;
-    }
-        function preventDefaults(e) {
-  e.preventDefault();
-  e.stopPropagation();
-}
-        const dropArea = document.getElementById("drop-file");
 
-function highlight(e) {
-  preventDefaults(e);
-  dropArea.classList.add("highlight");
-}
+        function uploadFile(file, index, form) {
+    var xhr = new XMLHttpRequest();
+    var progressBar = document.getElementById(`progress${index}`);
+    var fileInfo = progressBar.previousElementSibling;  // Reference to the file info display element
 
-function unhighlight(e) {
-  preventDefaults(e);
-  dropArea.classList.remove("highlight");
-}
+    xhr.upload.onprogress = function(e) {
+        if (e.lengthComputable) {
+            var percentComplete = (e.loaded / e.total) * 100;
+            progressBar.style.width = percentComplete + '%';
+            progressBar.innerHTML = Math.round(percentComplete) + '%';
+        }
+    };
 
-dropArea.addEventListener("dragenter", highlight, false);
-dropArea.addEventListener("dragover", highlight, false);
-dropArea.addEventListener("dragleave", unhighlight, false);
-        function handleDrop(e) {
-  unhighlight(e);
-  let dt = e.dataTransfer;
-  let files = dt.files;
 
-  console.log(files);
+    xhr.onload = function() {
+            progressBar.style.width = '100%';
+            progressBar.style.backgroundColor = 'green'; // Indicate success visually
+            progressBar.innerHTML = 'Upload complete';
+            fileInfo.innerHTML = `Uploaded: ${file.name}`;
 
-}
+    };
+
+    xhr.open('POST', '/upload', true);
+    var formData = new FormData();
+    formData.append('files', file);
+    formData.append('questionId', form.querySelector('input[name="questionId"]').value);
+
+    xhr.send(formData);
+ }
     </script>
 </main>
 </html>

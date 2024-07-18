@@ -39,6 +39,9 @@ public class FileService {
         //파일을 불러올 때 사용할 파일 경로
         String savedPath = fileDir + savedName;
 
+        // 로그 추가
+        System.out.println("Saving file: " + origName + " as " + savedName + " to " + savedPath);
+
         //파일 엔티티 생성
         FileEntity file = FileEntity.builder()
                 .orgNm(origName)
@@ -48,8 +51,14 @@ public class FileService {
                 .questn(question)
                 .build();
 
-        //실제로 로컬에 uuid를 파일명으로 저장
-        files.transferTo(new File(savedPath));
+        try {
+            // 실제로 로컬에 uuid를 파일명으로 저장
+            files.transferTo(new File(savedPath));
+        } catch (IOException e) {
+            System.err.println("Failed to save file: " + e.getMessage());
+            throw e;
+        }
+
         //데이터베이스에 파일 정보 저장
         FileEntity savedFile = fileRepository.save(file);
 

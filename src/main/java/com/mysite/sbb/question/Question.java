@@ -38,6 +38,9 @@ public class Question {
     @Column(columnDefinition = "integer default 0", nullable = false)
     private Integer view_count = 0;
 
+    @Column(nullable = false)
+    private boolean isSecret = false; //디폴트를 false로
+
     @ManyToMany
     @JoinTable(
             name = "question_voters", // 관계 테이블 이름 지정

@@ -38,6 +38,7 @@ public class QuestionController {
     private final UserService userService;
     private final FileRepository fileRepository;
     private final FileService fileService;
+    private final QuestionRepository questionRepository;
 
     @GetMapping("/list")
     public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page,
@@ -130,7 +131,7 @@ public class QuestionController {
             return "question_form";
         }
         SiteUser siteUser = this.userService.getUser(principal.getName());
-        this.questionService.create(questionForm.getSubject(), questionForm.getContent(), siteUser, files);
+        this.questionService.create(questionForm.getSubject(), questionForm.getContent(), siteUser, files, questionForm.isSecret());
         return "redirect:/question/list"; // 질문 등록후 저장목록으로 이동
     }
 
@@ -144,6 +145,7 @@ public class QuestionController {
         QuestionForm questionForm = new QuestionForm();
         questionForm.setSubject(question.getSubject());
         questionForm.setContent(question.getContent());
+        questionForm.setSecret(question.isSecret());
 
         List<FileEntity> files = fileRepository.findByQuestion(question);
 
@@ -173,7 +175,7 @@ public class QuestionController {
             redirectAttributes.addFlashAttribute("error", "파일은 최대 3개까지 업로드 가능합니다.");
             return "redirect:/question/modify/" +id;
         }
-        this.questionService.modify(question, questionForm.getSubject(), questionForm.getContent(), files, deleteFileIds);
+        this.questionService.modify(question, questionForm.getSubject(), questionForm.getContent(), files, deleteFileIds, questionForm.isSecret());
         return String.format("redirect:/question/detail/%s", id);
     }
 

@@ -75,12 +75,13 @@ public class QuestionService {
     }
 
     @Transactional
-    public Question create(String subject, String content, SiteUser user, List<MultipartFile> files) throws IOException {
+    public Question create(String subject, String content, SiteUser user, List<MultipartFile> files, boolean isSecret) throws IOException {
         Question q = new Question();
         q.setSubject(subject);
         q.setContent(content);
         q.setCreateDate(LocalDateTime.now());
         q.setAuthor(user);
+        q.setSecret(isSecret);
         q.setView_count(0);
         this.questionRepository.save(q);
 
@@ -90,10 +91,11 @@ public class QuestionService {
         return q;
     }
 
-    public void modify(Question question, String subject,String content, List<MultipartFile> newfiles, List<Long> deleteFileIds) throws IOException {
+    public void modify(Question question, String subject,String content, List<MultipartFile> newfiles, List<Long> deleteFileIds, boolean isSecret ) throws IOException {
         question.setSubject(subject);
         question.setContent(content);
         question.setModifyDate(LocalDateTime.now());
+        question.setSecret(isSecret);
         this.questionRepository.save(question);
 
         // 선택적 파일 삭제 로직
