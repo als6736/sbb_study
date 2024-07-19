@@ -52,6 +52,7 @@
                    class="delete btn btn-sm btn-outline-secondary" sec:authorize="isAuthenticated"
                    th:if="${question.author != null and #authentication.getPrincipal().getUsername() == question.author.username}"
                    th:text="삭제"></a>
+                <a href="javascript:history.back(-1)" class="btn btn-sm btn-outline-secondary">뒤로가기</a>
             </div>
         </div>
     </div>

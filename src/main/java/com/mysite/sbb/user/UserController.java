@@ -38,12 +38,12 @@ public class UserController {
 
     private  final PasswordEncoder passwordEncoder;
 
-    @GetMapping("/signup")
+    @GetMapping("/signup") //템플릿 렌더링
     public String signup(UserCreateForm userCreateForm) {
         return "signup_form";
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/signup") //회원 가입 진행
     public String signup(@Valid UserCreateForm userCreateForm, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
             return "signup_form";
@@ -51,12 +51,15 @@ public class UserController {
 
         if (!userCreateForm.getPassword1().equals(userCreateForm.getPassword2())) {
             bindingResult.rejectValue("password2", "passwordIncorrect",
+                    //bindingResult.rejectValue를 사용하여 비밀번호와 비밀번호 확인의 값이 서로 같은지를 확인하고
+                    // 일치하지 않을경우 오류 코드와 오류 메시지를 출력하도록 한다.
                     "2개의 패스워드가 일치하지 않습니다.");
             return "signup_form";
         }
         try {
-        userService.create(userCreateForm.getUsername(),
+        userService.create(userCreateForm.getUsername(), //userService.create를 사용하여 전달받은 데이터를 저장한다.
                 userCreateForm.getEmail(), userCreateForm.getPassword1());
+        //예외 상황 오류메시지 그대로 출력되는것을 방지
         }catch (DataIntegrityViolationException e) {
             e.printStackTrace();
             bindingResult.reject("signupFailed","이미 등록된 사용자입니다.");

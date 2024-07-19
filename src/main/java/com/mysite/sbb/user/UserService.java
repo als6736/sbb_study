@@ -26,7 +26,7 @@ public class UserService {
         SiteUser user = new SiteUser();
         user.setUsername(username);
         user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
+        user.setPassword(passwordEncoder.encode(password)); //비밀번호를 설정할때 비크립트 암호화
         this.userRepository.save(user);
         return user;
     }

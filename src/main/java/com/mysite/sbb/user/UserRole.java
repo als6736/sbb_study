@@ -2,7 +2,7 @@ package com.mysite.sbb.user;
 
 import lombok.Getter;
 
-@Getter
+@Getter //Setter는 필요없다.
 public enum UserRole {
     ADMIN("ROLE_ADMIN"),
         USER("ROLE_USER");

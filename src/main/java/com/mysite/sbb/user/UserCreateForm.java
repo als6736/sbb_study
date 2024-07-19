@@ -20,6 +20,6 @@ public class UserCreateForm {
     private String password2;
 
     @NotEmpty(message = "이메일은 필수항목입니다.")
-    @Email
+    @Email // 해당 속성값이 이메일 형식과 일치하는지를 검증한다.
     private String email;
 }
