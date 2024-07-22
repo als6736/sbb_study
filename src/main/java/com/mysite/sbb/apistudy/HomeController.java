@@ -38,12 +38,12 @@ public class HomeController {
 
             JSONParser jsonParser = new JSONParser();
             JSONObject jsonObject = (JSONObject)jsonParser.parse(result);
-            System.out.println(result);
-            System.out.println(jsonObject);
+//            System.out.println(result);
+//            System.out.println(jsonObject);
             JSONObject cardSubwayStatsNew = (JSONObject)jsonObject.get("CardSubwayStatsNew");
-            System.out.println(cardSubwayStatsNew);
+//            System.out.println(cardSubwayStatsNew);
             JSONArray infoArr = (JSONArray)cardSubwayStatsNew.get("row");
-            System.out.println(infoArr);
+//            System.out.println(infoArr);
 
             for(int i=0;i<infoArr.size();i++){
                 JSONObject tmp = (JSONObject)infoArr.get(i);
