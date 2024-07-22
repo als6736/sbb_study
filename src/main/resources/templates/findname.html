@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>findName</title>
+</head>
+<body>
+<p th:text="${msg}"></p>
+<h3>Input substation name you want to search</h3>
+<h3>Example: 서울역,시청... </h3>
+
+<form method="POST" action="/findname">
+    <input type="text" name="station_name" th:value="${station_name}"/>
+    <input type="submit" value="CLick"/>
+</form>
+</body>
+</html>
