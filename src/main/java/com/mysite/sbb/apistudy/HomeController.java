@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.List;
 
 @Controller
 public class HomeController {
@@ -61,5 +62,23 @@ public class HomeController {
             e.printStackTrace();
         }
         return "redirect:/findname";
+    }
+
+    @GetMapping("findname")
+    public String input_name(Model model){
+        return "findname";
+    }
+
+    @PostMapping("findname")
+    public String stationName(@RequestParam(value = "station_name",required = true)  String stationName, Model model){
+        List<SubstationInfo> infoList=infoRepository.findByName(stationName);
+
+        if(infoList.isEmpty()==true){//없는 역이름이면 재입력 요구
+            model.addAttribute("msg","역 이름을 찾을 수 없습니다. 확인 후 재입력해주세요.");
+            return "findname";
+        }else {//유효한 역이름이면 결과 반환
+            model.addAttribute("station_name",stationName);
+            return "result";
+        }
     }
 }

@@ -26,7 +26,8 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(new AntPathRequestMatcher("/h2-console/**"),
                                 //h2-console, "/h2-console/**"로 시작하는 모든 URL은 csrf 검증을 하지 않는다.
                                 new AntPathRequestMatcher("/upload"),
-                                new AntPathRequestMatcher("/study/api")))
+                                new AntPathRequestMatcher("/study/api"),
+                                new AntPathRequestMatcher("/findname")))
                 .headers((headers) -> headers //h2-console은 스프링 프레임 워크가아니다,
                         // 스프링 시큐리티는 웹 사이트의 콘텐츠가 다른 사이트에 포함 되지 않도록 하기 위해
                         // X-Frame-Options 헤더의 기본값을 DENY로 사용하는데 프레임 구조의 웹사이트는 이 헤더의 값이 DENY인 경우 오류가 발생한다.
