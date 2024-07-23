@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html><!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>findLine</title>
+</head>
+<body>
+<p th:text="${msg}"></p>
+<h3>Input substation Line you want to search</h3>
+<h3>Example: 1호선,2호선... </h3>
+
+<form method="POST" action="/findline">
+    <input type="text" name="line_num" th:value="${line_num}"/>
+    <input type="submit" value="CLick"/>
+</form>
+</body>
+</html>

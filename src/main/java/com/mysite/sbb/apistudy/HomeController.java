@@ -81,4 +81,22 @@ public class HomeController {
             return "result";
         }
     }
+
+    @GetMapping("findline")
+    public String input_line(Model model) {
+        return "findline";
+    }
+
+    @PostMapping("findline")
+    public String linenum(@RequestParam(value = "line_num",required = true) String linenum, Model model) {
+        List<SubstationInfo> infoList=infoRepository.findByLine(linenum);
+
+        if(infoList.isEmpty()==true){
+            model.addAttribute("msg", "호선의 이름을 찾을 수 없습니다. 확인 후 재입력해주세요");
+            return "findline";
+        } else {
+            model.addAttribute("line_num",linenum);
+            return "resultline";
+        }
+    }
 }

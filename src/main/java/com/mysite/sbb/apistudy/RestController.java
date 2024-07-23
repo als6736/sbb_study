@@ -55,7 +55,7 @@ public class RestController {
         return infoList;
     }
 
-    @RequestMapping("/result/line")
+    @RequestMapping("/resultline")
     public List<SubstationInfo> resultLine(Model model, @RequestParam(required = true) String line_num){
         List<SubstationInfo> infoList= infoRepository.findByLine(line_num);
         if(infoList.isEmpty()==true) System.out.println("empty list");
