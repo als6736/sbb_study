@@ -97,12 +97,12 @@
 
 
     xhr.onload = function() {
-            progressBar.style.width = '100%';
-            progressBar.style.backgroundColor = 'green'; // Indicate success visually
-            progressBar.innerHTML = 'Upload complete';
-            fileInfo.innerHTML = `Uploaded: ${file.name}`;
-
-    };
+                    progressBar.style.width = '100%';
+                    progressBar.style.backgroundColor = 'green'; // Indicate success visually
+                    progressBar.innerHTML = 'Upload complete';
+                    fileInfo.innerHTML = `Uploaded: ${file.name}`;
+                }
+            };
 
     xhr.open('POST', '/upload', true);
     var formData = new FormData();

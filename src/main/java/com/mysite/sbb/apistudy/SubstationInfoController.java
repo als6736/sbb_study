@@ -16,7 +16,7 @@ import java.net.URL;
 import java.util.List;
 
 @Controller
-public class HomeController {
+public class SubstationInfoController {
 
     @Autowired
     private SubstationInfoRepository infoRepository;
@@ -32,19 +32,15 @@ public class HomeController {
 
         try {
             String requestDate=date;
-            URL url = new URL("http://openapi.seoul.go.kr:8088/" + "4541754d45616c733130365059564846/" + "json/CardSubwayStatsNew/1/100/"+requestDate);
+            URL url = new URL("http://openapi.seoul.go.kr:8088/" + "4541754d45616c733130365059564846/" + "json/CardSubwayStatsNew/1/700/"+requestDate);
             BufferedReader bf;
             bf = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
             result = bf.readLine();
 
             JSONParser jsonParser = new JSONParser();
             JSONObject jsonObject = (JSONObject)jsonParser.parse(result);
-//            System.out.println(result);
-//            System.out.println(jsonObject);
             JSONObject cardSubwayStatsNew = (JSONObject)jsonObject.get("CardSubwayStatsNew");
-//            System.out.println(cardSubwayStatsNew);
             JSONArray infoArr = (JSONArray)cardSubwayStatsNew.get("row");
-//            System.out.println(infoArr);
 
             for(int i=0;i<infoArr.size();i++){
                 JSONObject tmp = (JSONObject)infoArr.get(i);

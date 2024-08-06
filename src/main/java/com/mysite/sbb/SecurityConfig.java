@@ -14,7 +14,7 @@ import org.springframework.security.web.header.writers.frameoptions.XFrameOption
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration //스프링 환경설정 파일 선언
-@EnableWebSecurity //모든 URL요청이 시큐리티의 제어를 받게 만듦 시큐리티 활성화
+//@EnableWebSecurity //모든 URL요청이 시큐리티의 제어를 받게 만듦 시큐리티 활성화
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
     @Bean
@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/upload"),
                                 new AntPathRequestMatcher("/study/api"),
                                 new AntPathRequestMatcher("/findname"),
+                                new AntPathRequestMatcher("/products"),
                                 new AntPathRequestMatcher("/findline")))
                 .headers((headers) -> headers //h2-console은 스프링 프레임 워크가아니다,
                         // 스프링 시큐리티는 웹 사이트의 콘텐츠가 다른 사이트에 포함 되지 않도록 하기 위해
