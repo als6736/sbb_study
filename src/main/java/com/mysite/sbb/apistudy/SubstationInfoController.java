@@ -14,6 +14,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Controller
 public class SubstationInfoController {
@@ -49,9 +51,10 @@ public class SubstationInfoController {
                         (String)tmp.get("USE_YMD"),
                         (String)tmp.get("SBWY_ROUT_LN_NM"),
                         (String)tmp.get("SBWY_STNS_NM"),
-                        (double)tmp.get("GTON_TNOPE"),
-                        (double)tmp.get("GTOFF_TNOPE"),
-                        (String)tmp.get("REG_YMD"));
+                        Double.parseDouble(tmp.get("GTON_TNOPE").toString()),
+                        Double.parseDouble(tmp.get("GTOFF_TNOPE").toString()),
+                        (String)tmp.get("REG_YMD")
+                );
                 infoRepository.save(infoObj);
             }
         }catch (Exception e) {
@@ -67,13 +70,14 @@ public class SubstationInfoController {
 
     @PostMapping("findname")
     public String stationName(@RequestParam(value = "station_name",required = true)  String stationName, Model model){
-        List<SubstationInfo> infoList=infoRepository.findByName(stationName);
+        List<SubstationInfo> infoList=infoRepository.findBySbwyStnsNm(stationName);
 
         if(infoList.isEmpty()==true){//없는 역이름이면 재입력 요구
             model.addAttribute("msg","역 이름을 찾을 수 없습니다. 확인 후 재입력해주세요.");
             return "findname";
         }else {//유효한 역이름이면 결과 반환
             model.addAttribute("station_name",stationName);
+            model.addAttribute("infoList", infoList);
             return "result";
         }
     }
@@ -85,14 +89,24 @@ public class SubstationInfoController {
 
     @PostMapping("findline")
     public String linenum(@RequestParam(value = "line_num",required = true) String linenum, Model model) {
-        List<SubstationInfo> infoList=infoRepository.findByLine(linenum);
+        List<SubstationInfo> infoList=infoRepository.findBySbwyRoutLnNm(linenum);
 
         if(infoList.isEmpty()==true){
             model.addAttribute("msg", "호선의 이름을 찾을 수 없습니다. 확인 후 재입력해주세요");
             return "findline";
         } else {
             model.addAttribute("line_num",linenum);
+            model.addAttribute("infoList", infoList);
             return "resultline";
         }
+    }
+
+    // 추가된 부분: 모든 데이터 조회
+    @GetMapping("/study/api/all")
+    public String getAllData(Model model) {
+        Iterable<SubstationInfo> infoIterable = infoRepository.findAll();
+        List<SubstationInfo> infoList = StreamSupport.stream(infoIterable.spliterator(), false).collect(Collectors.toList());
+        model.addAttribute("infoList", infoList);
+        return "allData";
     }
 }

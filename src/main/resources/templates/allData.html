@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>All Substation Info</title>
+</head>
+<body>
+<h1>All Substation Info</h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>USE_YMD</th>
+        <th>SBWY_ROUT_LN_NM</th>
+        <th>SBWY_STNS_NM</th>
+        <th>GTON_TNOPE</th>
+        <th>GTOFF_TNOPE</th>
+        <th>REG_YMD</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="info : ${infoList}">
+        <td th:text="${info.id}">ID</td>
+        <td th:text="${info.useYmd}">USE_YMD</td>
+        <td th:text="${info.sbwyRoutLnNm}">SBWY_ROUT_LN_NM</td>
+        <td th:text="${info.sbwyStnsNm}">SBWY_STNS_NM</td>
+        <td th:text="${info.gtonTnope}">GTON_TNOPE</td>
+        <td th:text="${info.gtoffTnope}">GTOFF_TNOPE</td>
+        <td th:text="${info.regYmd}">REG_YMD</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

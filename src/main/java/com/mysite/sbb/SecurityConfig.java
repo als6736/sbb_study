@@ -28,7 +28,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/upload"),
                                 new AntPathRequestMatcher("/study/api"),
                                 new AntPathRequestMatcher("/findname"),
-                                new AntPathRequestMatcher("/products"),
+                                new AntPathRequestMatcher("/products/**"),
                                 new AntPathRequestMatcher("/findline")))
                 .headers((headers) -> headers //h2-console은 스프링 프레임 워크가아니다,
                         // 스프링 시큐리티는 웹 사이트의 콘텐츠가 다른 사이트에 포함 되지 않도록 하기 위해

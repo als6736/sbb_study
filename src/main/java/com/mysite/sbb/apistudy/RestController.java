@@ -49,7 +49,7 @@ public class RestController {
     SubstationInfoRepository infoRepository;
     @RequestMapping("/result")
     public List<SubstationInfo> result(Model model, @RequestParam(required = true) String station_name){
-        List<SubstationInfo> infoList= infoRepository.findByName(station_name);
+        List<SubstationInfo> infoList= infoRepository.findBySbwyStnsNm(station_name);
         if(infoList.isEmpty()==true) System.out.println("empty list");
 
         return infoList;
@@ -57,7 +57,7 @@ public class RestController {
 
     @RequestMapping("/resultline")
     public List<SubstationInfo> resultLine(Model model, @RequestParam(required = true) String line_num){
-        List<SubstationInfo> infoList= infoRepository.findByLine(line_num);
+        List<SubstationInfo> infoList= infoRepository.findBySbwyRoutLnNm(line_num);
         if(infoList.isEmpty()==true) System.out.println("empty list");
 
         return infoList;
