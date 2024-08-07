@@ -5,11 +5,15 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.elasticsearch.annotations.Document;
 
 @Document(indexName = "substation_info")
 @Data
 public class SubstationInfo {
+
+    private static final Logger logger = LoggerFactory.getLogger(SubstationInfo.class);
 
     @Id
     private Long id;
@@ -30,5 +34,6 @@ public class SubstationInfo {
         this.gtonTnope = gtonTnope;
         this.gtoffTnope = gtoffTnope;
         this.regYmd = regYmd;
+        logger.info("SubstationInfo created: {}", this);
     }
 }

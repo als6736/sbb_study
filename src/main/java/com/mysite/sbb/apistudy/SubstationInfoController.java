@@ -2,7 +2,7 @@ package com.mysite.sbb.apistudy;
 
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.*;
+import org.json.simple.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,31 +33,30 @@ public class SubstationInfoController {
         String result = "";
 
         try {
-            String requestDate=date;
-            URL url = new URL("http://openapi.seoul.go.kr:8088/" + "4541754d45616c733130365059564846/" + "json/CardSubwayStatsNew/1/700/"+requestDate);
-            BufferedReader bf;
-            bf = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+            String requestDate = date;
+            URL url = new URL("http://openapi.seoul.go.kr:8088/4541754d45616c733130365059564846/json/CardSubwayStatsNew/1/700/" + requestDate);
+            BufferedReader bf = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
             result = bf.readLine();
 
             JSONParser jsonParser = new JSONParser();
-            JSONObject jsonObject = (JSONObject)jsonParser.parse(result);
-            JSONObject cardSubwayStatsNew = (JSONObject)jsonObject.get("CardSubwayStatsNew");
-            JSONArray infoArr = (JSONArray)cardSubwayStatsNew.get("row");
+            JSONObject jsonObject = (JSONObject) jsonParser.parse(result);
+            JSONObject cardSubwayStatsNew = (JSONObject) jsonObject.get("CardSubwayStatsNew");
+            JSONArray infoArr = (JSONArray) cardSubwayStatsNew.get("row");
 
-            for(int i=0;i<infoArr.size();i++){
-                JSONObject tmp = (JSONObject)infoArr.get(i);
+            for (int i = 0; i < infoArr.size(); i++) {
+                JSONObject tmp = (JSONObject) infoArr.get(i);
                 SubstationInfo infoObj = new SubstationInfo(
-                        i+(long)1,
-                        (String)tmp.get("USE_YMD"),
-                        (String)tmp.get("SBWY_ROUT_LN_NM"),
-                        (String)tmp.get("SBWY_STNS_NM"),
+                        i + (long) 1,
+                        (String) tmp.get("USE_YMD"),
+                        (String) tmp.get("SBWY_ROUT_LN_NM"),
+                        (String) tmp.get("SBWY_STNS_NM"),
                         Double.parseDouble(tmp.get("GTON_TNOPE").toString()),
                         Double.parseDouble(tmp.get("GTOFF_TNOPE").toString()),
-                        (String)tmp.get("REG_YMD")
+                        (String) tmp.get("REG_YMD")
                 );
                 infoRepository.save(infoObj);
             }
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return "redirect:/findname";
@@ -70,13 +69,13 @@ public class SubstationInfoController {
 
     @PostMapping("findname")
     public String stationName(@RequestParam(value = "station_name",required = true)  String stationName, Model model){
-        List<SubstationInfo> infoList=infoRepository.findBySbwyStnsNm(stationName);
+        List<SubstationInfo> infoList = infoRepository.findBySbwyStnsNm(stationName);
 
-        if(infoList.isEmpty()==true){//없는 역이름이면 재입력 요구
-            model.addAttribute("msg","역 이름을 찾을 수 없습니다. 확인 후 재입력해주세요.");
+        if (infoList.isEmpty()) {//없는 역이름이면 재입력 요구
+            model.addAttribute("msg", "역 이름을 찾을 수 없습니다. 확인 후 재입력해주세요.");
             return "findname";
-        }else {//유효한 역이름이면 결과 반환
-            model.addAttribute("station_name",stationName);
+        } else {//유효한 역이름이면 결과 반환
+            model.addAttribute("station_name", stationName);
             model.addAttribute("infoList", infoList);
             return "result";
         }
@@ -88,14 +87,14 @@ public class SubstationInfoController {
     }
 
     @PostMapping("findline")
-    public String linenum(@RequestParam(value = "line_num",required = true) String linenum, Model model) {
-        List<SubstationInfo> infoList=infoRepository.findBySbwyRoutLnNm(linenum);
+    public String linenum(@RequestParam(value = "line_num", required = true) String linenum, Model model) {
+        List<SubstationInfo> infoList = infoRepository.findBySbwyRoutLnNm(linenum);
 
-        if(infoList.isEmpty()==true){
+        if (infoList.isEmpty()) {
             model.addAttribute("msg", "호선의 이름을 찾을 수 없습니다. 확인 후 재입력해주세요");
             return "findline";
         } else {
-            model.addAttribute("line_num",linenum);
+            model.addAttribute("line_num", linenum);
             model.addAttribute("infoList", infoList);
             return "resultline";
         }
