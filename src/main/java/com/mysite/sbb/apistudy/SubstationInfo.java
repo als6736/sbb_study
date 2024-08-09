@@ -5,30 +5,40 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.Data;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@Entity
+import java.util.Date;
+
+@Document(indexName = "substation_info")
 @Data
 public class SubstationInfo {
 
+    private static final Logger logger = LoggerFactory.getLogger(SubstationInfo.class);
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private String USE_YMD;
-    private String SBWY_ROUT_LN_NM;
-    private String SBWY_STNS_NM;
-    private double GTON_TNOPE;
-    private double GTOFF_TNOPE;
-    private String REG_YMD;
+    private String id; // Elasticsearch에서 사용하는 ID
+    private Long useYmd;
+    private Long regYmd;
+    private String sbwyRoutLnNm;
+    private String sbwyStnsNm;
+    private double gtonTnope;
+    private double gtoffTnope;
 
     private SubstationInfo() {}
 
-    public SubstationInfo(Long id, String USE_YMD, String SBWY_ROUT_LN_NM, String SBWY_STNS_NM, double GTON_TNOPE, double GTOFF_TNOPE, String REG_YMD) {
+    public SubstationInfo(String id, Long useYmd, String sbwyRoutLnNm, String sbwyStnsNm, double gtonTnope, double gtoffTnope, Long regYmd) {
         this.id = id;
-        this.USE_YMD = USE_YMD;
-        this.SBWY_ROUT_LN_NM = SBWY_ROUT_LN_NM;
-        this.SBWY_STNS_NM = SBWY_STNS_NM;
-        this.GTON_TNOPE = GTON_TNOPE;
-        this.GTOFF_TNOPE = GTOFF_TNOPE;
-        this.REG_YMD = REG_YMD;
+        this.useYmd = useYmd != null ? useYmd : 0L;
+        this.sbwyRoutLnNm = sbwyRoutLnNm;
+        this.sbwyStnsNm = sbwyStnsNm;
+        this.gtonTnope = gtonTnope;
+        this.gtoffTnope = gtoffTnope;
+        this.regYmd = regYmd != null ? regYmd : 0L;
+        logger.info("SubstationInfo created: {}", this);
     }
 }
