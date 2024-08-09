@@ -2,20 +2,11 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Substation Info Search</title>
+    <title>Search Results</title>
+    <a href="/study/api/all">List all</a>
 </head>
 <body>
-<h1>Substation Info Search</h1>
-
-<!-- 검색 폼 -->
-<form action="#" th:action="@{/search}" method="post">
-    <label for="stationName">Station Name:</label>
-    <input type="text" id="stationName" name="stationName" required>
-    <button type="submit">Search</button>
-</form>
-
-<!-- 검색 결과 -->
-<h2>Search Results</h2>
+<h1>Search Results</h1>
 <table border="1">
     <thead>
     <tr>
@@ -40,6 +31,5 @@
     </tr>
     </tbody>
 </table>
-
 </body>
 </html>

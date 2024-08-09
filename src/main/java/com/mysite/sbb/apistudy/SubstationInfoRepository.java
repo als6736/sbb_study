@@ -11,4 +11,6 @@ import java.util.List;
 public interface SubstationInfoRepository extends ElasticsearchRepository<SubstationInfo, Long>, CrudRepository<SubstationInfo, Long>{
     List<SubstationInfo> findBySbwyStnsNm(String sbwyStnsNm);
     List<SubstationInfo> findBySbwyRoutLnNm(String sbwyRoutLnNm);
+    // null이면 안가지고옴
+    List<SubstationInfo> findByUseYmdIsNotNullAndRegYmdIsNotNull();
 }

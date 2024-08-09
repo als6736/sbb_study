@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/upload"),
                                 new AntPathRequestMatcher("/study/api"),
                                 new AntPathRequestMatcher("/findname"),
+                                new AntPathRequestMatcher("/**"),
                                 new AntPathRequestMatcher("/products/**"),
                                 new AntPathRequestMatcher("/findline")))
                 .headers((headers) -> headers //h2-console은 스프링 프레임 워크가아니다,

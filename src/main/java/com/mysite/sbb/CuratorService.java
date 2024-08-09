@@ -9,8 +9,8 @@ import java.io.InputStreamReader;
 @Service
 public class CuratorService {
 
-    // 필요한 경우, @Scheduled 주석을 제거하여 주기적으로 실행되지 않도록 할 수 있습니다.
-    // 예를 들어, 일회성 작업으로 실행하려면 주석 처리된 상태로 유지하세요.
+    // 필요한 경우, @Scheduled 주석을 제거하여 주기적으로 실행되지 않도록 가능
+    // 예를 들어, 일회성 작업으로 실행하려면 주석 처리
      @Scheduled(cron = "0 0 0 * * ?") // 매 자정 마다 삭제
     public void runCurator() {
         try {
