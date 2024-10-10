@@ -6,10 +6,20 @@ import com.mysite.sbb.file3.FileService;
 import com.mysite.sbb.user.SiteUser;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.elasticsearch.client.erhlc.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.client.erhlc.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
@@ -21,11 +31,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class QuestionService {
 
+    private final ElasticsearchRestTemplate elasticsearchRestTemplate;
     private final QuestionRepository questionRepository;
     private final FileService fileService;
 
@@ -153,5 +165,22 @@ public class QuestionService {
         sorts.add(Sort.Order.desc("createDate"));
         Pageable pageable = PageRequest.of(page, 10, Sort.by(sorts)); //페이지 번호, 갯수
         return questionRepository.findAllByKeywordAndAndAnswer_AuthorId(kw, answerAuthorId, pageable);
+    }
+
+    public List<String> getTopSearchKeywords() throws IOException{
+        // 1. SearchRequest와 SearchSourceBuilder 생성
+        SearchRequest searchRequest = new SearchRequest("search-log"); // 인덱스 이름 설정
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.aggregation(AggregationBuilders.terms("top_keywords").field("keyword").size(10));
+
+        searchRequest.source(searchSourceBuilder);
+
+        // 2. Elasticsearch로부터 집계 결과 요청
+//        elasticseaRchrestTemplate.q
+//
+//        return topKeywords.getBuckets().stream()
+//                .map(Terms.Bucket::getKeyAsString)
+//                .collect(Collectors.toList());
+        return null;
     }
 }

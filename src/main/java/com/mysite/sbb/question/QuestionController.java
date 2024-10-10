@@ -11,7 +11,13 @@ import com.mysite.sbb.user.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.elasticsearch.client.erhlc.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -24,6 +30,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,16 +41,22 @@ import java.util.stream.Collectors;
 @Controller
 public class QuestionController {
 
+    private static final Logger log = LoggerFactory.getLogger(QuestionController.class);
     private final QuestionService questionService;
     private final AnswerService answerService;
     private final UserService userService;
     private final FileRepository fileRepository;
     private final FileService fileService;
     private final QuestionRepository questionRepository;
+    private final ElasticsearchRestTemplate ElasticsearchRestTemplate;
 
     @GetMapping("/list")
     public String list(Model model, @RequestParam(value = "page", defaultValue = "0") int page,
                        @RequestParam(value = "kw", defaultValue = "") String kw) {
+        if(!kw.isEmpty()){
+            logSearcKeyword(kw);
+        }
+        System.out.println("여기까지 오는지 확인");
         Page<Question> paging = this.questionService.getList(page, kw);
         model.addAttribute("paging", paging);
         model.addAttribute("kw", kw);
@@ -199,6 +212,25 @@ public class QuestionController {
         SiteUser siteUser = this.userService.getUser(principal.getName());
         this.questionService.vote(question, siteUser);
         return String.format("redirect:/question/detail/%s", id);
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/question/rank")
+    public String questionRank() {
+
+        String someThing = "";
+
+        return someThing;
+    }
+
+    //검색어 Elasticsearch에 저장하는 메서드
+    private void logSearcKeyword(String Keyword){
+        Map<String, Object> document = new HashMap<>();
+        document.put("keyword", Keyword);
+        document.put("timestamp", System.currentTimeMillis());
+
+        ElasticsearchRestTemplate.save(document, IndexCoordinates.of("search-log"));
+        System.out.println("여기까지 오는지 확인되면 세이브 된거임");
     }
 
 }

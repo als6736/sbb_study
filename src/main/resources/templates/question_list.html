@@ -82,6 +82,11 @@
         <input type="hidden" id="page" name="page" th:value="${paging.number}">
     </form>
 </div>
+<div>
+    <form th:action="@{/question/rank}" method="get" id="search_rank">
+        <button type="submit">검색어 순위 보기</button>
+    </form>
+</div>
 <script layout:fragment="script" type='text/javascript'>
     const page_elements = document.getElementsByClassName("page-link");
     Array.from(page_elements).forEach(function(element) {

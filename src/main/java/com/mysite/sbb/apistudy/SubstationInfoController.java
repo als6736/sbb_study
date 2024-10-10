@@ -41,7 +41,7 @@ public class SubstationInfoController {
         return "apistudy";
     }
 
-    @PostMapping("/study/api")
+    //@PostMapping("/study/api")
     public String load_save(@RequestParam("date") String date, Model model) {
         String result = "";
 

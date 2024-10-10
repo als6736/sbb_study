@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Subway Statistics</title>
+</head>
+<body>
+<h1>Subway Statistics</h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Route Line</th>
+        <th>Station Name</th>
+        <th>Onboard Passengers</th>
+        <th>Offboard Passengers</th>
+        <th>Registration Date</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="info : ${infoList}">
+        <td th:text="${info.useYmd}"></td>
+        <td th:text="${info.routeLine}"></td>
+        <td th:text="${info.stationName}"></td>
+        <td th:text="${info.gtonTnope}"></td>
+        <td th:text="${info.gtoffTnope}"></td>
+        <td th:text="${info.regYmd}"></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

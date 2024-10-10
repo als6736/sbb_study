@@ -42,7 +42,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'com.fasterxml.jackson.core:jackson-core:2.17.1'
 	implementation 'com.googlecode.json-simple:json-simple:1.1'
-	implementation 'org.springframework.data:spring-data-elasticsearch:4.4.1'
+	implementation 'org.springframework.data:spring-data-elasticsearch:5.1.0'
 	implementation 'org.elasticsearch.client:elasticsearch-rest-high-level-client:7.17.23'
 	implementation 'net.logstash.logback:logstash-logback-encoder:7.2'
 }
